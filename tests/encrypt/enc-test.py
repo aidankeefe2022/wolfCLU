@@ -52,7 +52,7 @@ class EncDecryptTest(unittest.TestCase):
         dec = "test-dec.der"
         self._cleanup(dec)
 
-        r = run_enc("decrypt", "-alg", "aes-256-cbc", "-nosalt",
+        r = run_enc("enc", "-d", "-aes-256-cbc", "-nosalt",
                      "-in", os.path.join(CERTS_DIR, "crl.der.enc"),
                      "-out", dec, password="")
         self.assertEqual(r.returncode, 0, r.stderr)
@@ -64,7 +64,7 @@ class EncDecryptTest(unittest.TestCase):
         dec = "test-dec.der"
         self._cleanup(dec)
 
-        r = run_enc("decrypt", "-base64", "-alg", "aes-256-cbc", "-nosalt",
+        r = run_enc("enc", "-base64", "-d", "-aes-256-cbc", "-nosalt",
                      "-in", os.path.join(CERTS_DIR, "crl.der.enc.base64"),
                      "-out", dec, password="")
         self.assertEqual(r.returncode, 0, r.stderr)
@@ -76,7 +76,7 @@ class EncDecryptTest(unittest.TestCase):
         dec = "test-dec.der"
         self._cleanup(dec)
 
-        r = run_enc("decrypt", "-base64", "-alg", "aes-256-cbc", "-nosalt",
+        r = run_enc("enc", "-base64", "-d", "-aes-256-cbc", "-nosalt",
                      "-in", os.path.join(CERTS_DIR, "file-does-not-exist"),
                      "-out", dec, password="")
         self.assertNotEqual(r.returncode, 0)
@@ -96,7 +96,7 @@ class EncDecryptTest(unittest.TestCase):
         # password only via PKCS#7 padding validation of the garbage plaintext.
         # Random salt makes that check probabilistic (~1/256 false accept), so
         # also verify the output does not match the original.
-        r = run_enc("decrypt", "-base64", "-alg", "aes-256-cbc",
+        r = run_enc("enc", "-base64", "-d", "-aes-256-cbc",
                      "-in", enc, "-out", dec,
                      password="bad password")
         bad_recovered = (r.returncode == 0
@@ -105,7 +105,7 @@ class EncDecryptTest(unittest.TestCase):
         self.assertFalse(bad_recovered,
                          "bad password must not recover original plaintext")
 
-        r = run_enc("decrypt", "-base64", "-alg", "aes-256-cbc",
+        r = run_enc("enc", "-base64", "-d", "-aes-256-cbc",
                      "-in", enc, "-out", dec,
                      password="test password")
         self.assertEqual(r.returncode, 0, r.stderr)
@@ -123,7 +123,7 @@ class EncDecryptTest(unittest.TestCase):
                      password="test")
         self.assertEqual(r.returncode, 0, r.stderr)
 
-        r = run_enc("decrypt", "-alg", "aes-128-cbc", "-in", enc, "-out", dec,
+        r = run_enc("enc", "-d", "-aes-128-cbc", "-in", enc, "-out", dec,
                      password="test")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(orig, dec, shallow=False),
@@ -142,7 +142,7 @@ class EncDecryptTest(unittest.TestCase):
                      password="test")
         self.assertEqual(r.returncode, 0, r.stderr)
 
-        r = run_enc("decrypt", "-alg", "aes-128-cbc", "-in", enc, "-out", dec,
+        r = run_enc("enc", "-d", "-aes-128-cbc", "-in", enc, "-out", dec,
                      password="test")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(small, dec, shallow=False),
@@ -206,7 +206,7 @@ class EncInteropTest(unittest.TestCase):
                                capture_output=True, timeout=60)
         self.assertEqual(ossl.returncode, 0, ossl.stderr)
 
-        r = run_enc("decrypt", "-base64", "-alg", "aes-256-cbc",
+        r = run_enc("enc", "-base64", "-d", "-aes-256-cbc",
                      "-in", enc, "-out", dec, password="test password")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(orig, dec, shallow=False))
@@ -238,7 +238,7 @@ class EncInteropTest(unittest.TestCase):
                                capture_output=True, timeout=60)
         self.assertEqual(ossl.returncode, 0, ossl.stderr)
 
-        r = run_enc("decrypt", "-base64", "-alg", "aes-256-cbc", "-pbkdf2",
+        r = run_enc("enc", "-base64", "-d", "-pbkdf2", "-aes-256-cbc",
                      "-in", enc, "-out", dec, password="long test password")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(orig, dec, shallow=False))
@@ -309,7 +309,7 @@ class EncInteropTest(unittest.TestCase):
             capture_output=True, timeout=60)
         self.assertEqual(ossl.returncode, 0, ossl.stderr)
 
-        r = run_wolfssl("decrypt", "-alg", "aes-cbc-256",
+        r = run_wolfssl("-decrypt", "-aes-cbc-256",
                         "-in", enc, "-out", dec,
                         "-key", key_hex, "-iv", iv_hex)
         self.assertEqual(r.returncode, 0, r.stderr)
@@ -328,7 +328,7 @@ class EncInteropTest(unittest.TestCase):
 
         # Decrypt using -pass flag instead of -k
         r = subprocess.run(
-            [WOLFSSL_BIN, "decrypt", "-base64", "-alg", "aes-256-cbc","-pbkdf2",
+            [WOLFSSL_BIN, "enc", "-base64", "-d", "-pbkdf2", "-aes-256-cbc",
              "-pass", "pass:long test password", "-in", enc, "-out", dec],
             capture_output=True, text=True, stdin=subprocess.DEVNULL,
             timeout=60)
@@ -412,7 +412,7 @@ class EncPassSourceTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
 
         d = subprocess.run(
-            [WOLFSSL_BIN, "decrypt", "-alg", "aes-256-cbc",
+            [WOLFSSL_BIN, "enc", "-d", "-aes-256-cbc",
              "-in", enc, "-out", dec, "-pass", "pass:test password"],
             capture_output=True, text=True, stdin=subprocess.DEVNULL,
             timeout=60)
@@ -442,25 +442,25 @@ class EncLegacyNamesTest(unittest.TestCase):
                      password="test password")
         self.assertEqual(r.returncode, 0, r.stderr)
 
-        r = run_enc("decrypt", "-alg", dec_algo, "-in", enc, "-out", dec,
+        r = run_enc("enc", "-d", dec_algo, "-in", enc, "-out", dec,
                      password="test password")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(orig, dec, shallow=False), msg)
 
     def test_legacy_aes_cbc_256_roundtrip(self):
-        self._roundtrip("-aes-cbc-256", "aes-cbc-256",
+        self._roundtrip("-aes-cbc-256", "-aes-cbc-256",
                         "legacy aes-cbc-256 round trip failed")
 
     def test_legacy_enc_canonical_dec(self):
-        self._roundtrip("-aes-cbc-256", "aes-256-cbc",
+        self._roundtrip("-aes-cbc-256", "-aes-256-cbc",
                         "legacy enc / canonical dec failed")
 
     def test_canonical_enc_legacy_dec(self):
-        self._roundtrip("-aes-256-cbc", "aes-cbc-256",
+        self._roundtrip("-aes-256-cbc", "-aes-cbc-256",
                         "canonical enc / legacy dec failed")
 
     def test_legacy_aes_cbc_128_roundtrip(self):
-        self._roundtrip("-aes-cbc-128", "aes-cbc-128",
+        self._roundtrip("-aes-cbc-128", "-aes-cbc-128",
                         "legacy aes-cbc-128 round trip failed")
 
 
@@ -511,12 +511,6 @@ class EncStdinInputTest(unittest.TestCase):
         return subprocess.run(cmd, input=stdin_data,
                               capture_output=True, text=True, timeout=60)
 
-    def _run_dec_stdin(self, stdin_data, *args, password="testpass"):
-        """Run wolfssl enc with stdin input (for filename prompts)."""
-        cmd = [WOLFSSL_BIN, "decrypt"] + list(args) + ["-k", password]
-        return subprocess.run(cmd, input=stdin_data,
-                              capture_output=True, text=True, timeout=60)
-
     # -- AES (EVP path) --
 
     def test_aes_inname_via_stdin(self):
@@ -530,7 +524,7 @@ class EncStdinInputTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0,
                          f"enc with stdin input failed: {r.stderr}")
 
-        r = run_enc("decrypt", "-alg", "aes-128-cbc", "-in", enc, "-out", dec,
+        r = run_enc("enc", "-d", "-aes-128-cbc", "-in", enc, "-out", dec,
                     password="testpass")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(orig, dec, shallow=False),
@@ -548,7 +542,7 @@ class EncStdinInputTest(unittest.TestCase):
                          f"enc should accept filename after empty line: "
                          f"{r.stderr}")
 
-        r = run_enc("decrypt", "-alg", "aes-128-cbc", "-in", enc, "-out", dec,
+        r = run_enc("enc", "-d", "-aes-128-cbc", "-in", enc, "-out", dec,
                     password="testpass")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(orig, dec, shallow=False),
@@ -568,7 +562,7 @@ class EncStdinInputTest(unittest.TestCase):
                          f"enc should recover after too-long input: "
                          f"{r.stderr}")
 
-        r = run_enc("decrypt", "-alg", "aes-128-cbc", "-in", enc, "-out", dec,
+        r = run_enc("enc", "-d", "-aes-128-cbc", "-in", enc, "-out", dec,
                     password="testpass")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(filecmp.cmp(orig, dec, shallow=False),
@@ -590,7 +584,7 @@ class EncStdinInputTest(unittest.TestCase):
                          f"Camellia enc with stdin output name failed: "
                          f"{r.stderr}")
 
-        r = self._run_dec_stdin(f"{dec}\n", "-alg", "camellia-128-cbc",
+        r = self._run_enc_stdin(f"{dec}\n", "-d", "-camellia-128-cbc",
                                 "-in", enc)
         self.assertEqual(r.returncode, 0,
                          f"Camellia dec with stdin output name failed: "
@@ -612,7 +606,7 @@ class EncStdinInputTest(unittest.TestCase):
                          f"Camellia enc should accept output name after "
                          f"empty line: {r.stderr}")
 
-        r = self._run_dec_stdin(f"\n{dec}\n", "-alg", "camellia-128-cbc",
+        r = self._run_enc_stdin(f"\n{dec}\n", "-d", "-camellia-128-cbc",
                                 "-in", enc)
         self.assertEqual(r.returncode, 0,
                          f"Camellia dec should accept output name after "
@@ -637,8 +631,8 @@ class EncStdinInputTest(unittest.TestCase):
                          f"Camellia enc should recover after too-long output "
                          f"name: {r.stderr}")
 
-        r = self._run_dec_stdin(f"{long_input}\n{dec}\n",
-                                "-alg", "camellia-128-cbc", "-in", enc)
+        r = self._run_enc_stdin(f"{long_input}\n{dec}\n",
+                                "-d", "-camellia-128-cbc", "-in", enc)
         self.assertEqual(r.returncode, 0,
                          f"Camellia dec should recover after too-long output "
                          f"name: {r.stderr}")
@@ -685,7 +679,7 @@ class EncKeyInputTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0,
                          "encrypt with -key hex failed: " + r.stderr)
 
-        r = run_wolfssl("decrypt", "-alg", "aes-cbc-256",
+        r = run_wolfssl("-decrypt", "-aes-cbc-256",
                         "-in", enc, "-out", dec,
                         "-key", self.KEY_HEX, "-iv", self.IV_HEX)
         self.assertEqual(r.returncode, 0,
@@ -710,7 +704,7 @@ class EncKeyInputTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0,
                          "encrypt with -inkey hex file failed: " + r.stderr)
 
-        r = run_wolfssl("decrypt", "-alg", "aes-cbc-256",
+        r = run_wolfssl("-decrypt", "-aes-cbc-256",
                         "-in", enc, "-out", dec,
                         "-inkey", keyfile, "-iv", self.IV_HEX)
         self.assertEqual(r.returncode, 0,
@@ -735,7 +729,7 @@ class EncKeyInputTest(unittest.TestCase):
                          "encrypt with -inkey raw binary file failed: "
                          + r.stderr)
 
-        r = run_wolfssl("decrypt", "-alg", "aes-cbc-256",
+        r = run_wolfssl("-decrypt", "-aes-cbc-256",
                         "-in", enc, "-out", dec,
                         "-inkey", keyfile, "-iv", self.IV_HEX)
         self.assertEqual(r.returncode, 0,
@@ -763,7 +757,7 @@ class EncKeyInputTest(unittest.TestCase):
                          "encrypt with whitespace-formatted hex file failed: "
                          + r.stderr)
 
-        r = run_wolfssl("decrypt", "-alg", "aes-cbc-256",
+        r = run_wolfssl("-decrypt", "-aes-cbc-256",
                         "-in", enc, "-out", dec,
                         "-inkey", keyfile, "-iv", self.IV_HEX)
         self.assertEqual(r.returncode, 0,
@@ -819,7 +813,7 @@ class EncKeyInputTest(unittest.TestCase):
                          "raw key ending in 0x0A must not be truncated: "
                          + r.stderr)
 
-        r = run_wolfssl("decrypt", "-alg", "aes-cbc-256",
+        r = run_wolfssl("-decrypt", "-aes-cbc-256",
                         "-in", enc, "-out", dec,
                         "-inkey", keyfile, "-iv", self.IV_HEX)
         self.assertEqual(r.returncode, 0,
@@ -909,7 +903,7 @@ class EncKeyInputTest(unittest.TestCase):
                          "encrypt with rand-generated hex key failed: "
                          + r.stderr)
 
-        r = run_wolfssl("decrypt", "-alg", "aes-cbc-256",
+        r = run_wolfssl("-decrypt", "-aes-cbc-256",
                         "-in", enc, "-out", dec,
                         "-inkey", keyfile, "-iv", self.IV_HEX)
         self.assertEqual(r.returncode, 0,
@@ -1063,7 +1057,7 @@ class EncStdinPasswordTest(unittest.TestCase):
         self.assertEqual(code, 0, "encrypt failed: " + out)
 
         r = subprocess.run(
-            [WOLFSSL_BIN, "decrypt", "-alg", "aes-cbc-256", "-pbkdf2",
+            [WOLFSSL_BIN, "decrypt", "aes-cbc-256", "-pbkdf2",
              "-pass", "pass:" + self.PASSWORD, "-in", cipher, "-out", dec],
             capture_output=True, text=True, stdin=subprocess.DEVNULL,
             timeout=60)
@@ -1089,7 +1083,7 @@ class EncStdinPasswordTest(unittest.TestCase):
         self.assertEqual(code, 0, "encrypt failed: " + out)
 
         r = subprocess.run(
-            [WOLFSSL_BIN, "decrypt", "-alg", "aes-cbc-256",
+            [WOLFSSL_BIN, "decrypt", "aes-cbc-256",
              "-pass", "pass:" + self.PASSWORD, "-in", cipher, "-out", dec],
             capture_output=True, text=True, stdin=subprocess.DEVNULL,
             timeout=60)

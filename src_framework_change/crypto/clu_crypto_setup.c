@@ -5,11 +5,11 @@
 #include <wolfclu/clu_optargs.h>
 #include <wolfcli/cli.h>
 #include<wolfclu/clu_arg_handlers.h>
+#include <wolfclu/clu_crypto_flags.h>
 
 static char* inFile = NULL;
 static char* outFile = NULL;
 static WOLFSSL_EVP_MD* hashType = NULL;
-static char* decEncAlgString;
 
 /* wolfCLU_handleCopyString writes through a {capacity, buffer pointer} pair,
  * so each of these keeps the backing array separate from the descriptor the
@@ -48,7 +48,6 @@ static byte noSalt = 0;
 
 static WOLFCLI_FLAG inFlag;
 static WOLFCLI_FLAG hashFlag;
-static WOLFCLI_FLAG algFlag;
 static WOLFCLI_FLAG outFlag;
 static WOLFCLI_FLAG ivFlag;
 static WOLFCLI_FLAG keyFlag;
@@ -168,6 +167,10 @@ static WOLFCLI_FLAG keyFlag = {
     .optionalArgs.dependsOn = {
         .flags = (WOLFCLI_FLAG *[]){&ivFlag},
         .flagsSz = 1,
+    },
+    .optionalArgs.altNames = {
+        (const char*[]){"--key"},
+        1,
     }
 };
 
@@ -181,6 +184,10 @@ static WOLFCLI_FLAG ivFlag = {
     .optionalArgs.groups = {
         .groups = (WOLFCLI_FLAG_GROUP *[]){&ivSaltMutex},
         .groupsSz = 1
+    },
+    .optionalArgs.altNames = {
+        (const char*[]){"--iv"},
+        1,
     }
 };
 
@@ -198,44 +205,6 @@ static WOLFCLI_FLAG hashFlag = {
     .value = &hashType,
     .argHandler = wolfCLU_handleGetHash,
     .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
-};
-
-static const char algLongHelp[] = (
-"Algorothm to used to process data \n\
-    Algorithms: \n"
-#ifndef NO_AES
-"       ├─aes-cbc-128\n"
-"       ├─aes-cbc-192\n"
-"       └─aes-cbc-256\n"
-#endif
-#if defined(WOLFSSL_AES_COUNTER) && \
-    LIBWOLFSSL_VERSION_HEX >= 0x05009000
-"       ├─aes-ctr-128\n"
-"       ├─aes-ctr-192\n"
-"       └─aes-ctr-256\n"
-#endif
-#ifndef NO_DES3
-"       ├─3des-cbc-56\n"
-"       ├─3des-cbc-112\n"
-"       └─3des-cbc-168\n"
-#endif
-#ifdef HAVE_CAMELLIA
-"       ├─camellia-cbc-128\n"
-"       ├─camellia-cbc-192\n"
-"       └─camellia-cbc-256\n"
-#endif
-        );
-
-static WOLFCLI_FLAG algFlag = {
-    .flag = "-alg",
-    .shortHelp = "Algorothm to used to process data",
-    .longHelp = algLongHelp,
-    .value = &decEncAlgString,
-    .argHandler = wolfCLI_handleString,
-    .optionalArgs =
-    {
-        .modes = WOLFCLI_FLAG_REQUIRED | WOLFCLI_FLAG_HAS_ARG,
-    },
 };
 
 static WOLFCLI_FLAG inFlag = {
@@ -268,10 +237,13 @@ static int handlePasswordArg(const char* arg, void* out)
     return WOLFCLU_FATAL_ERROR;
 }
 
+/* The cipher flags come from clu_crypto_flags.c. Every one of them has to be
+ * named here or the parser will not recognize it, so the build guards below
+ * have to match the ones the flags are declared under in
+ * wolfclu/clu_crypto_flags.h. */
 static WOLFCLI_FLAG* decryptFlags[] = {
     &inFlag,
     &outFlag,
-    &algFlag,
     &hashFlag,
     &ivFlag,
     &keyFlag,
@@ -281,6 +253,27 @@ static WOLFCLI_FLAG* decryptFlags[] = {
     &saltFlag,
     &base64Flag,
     &kdfVersionFlag,
+#ifndef NO_AES
+    &aes128CbcFlag,
+    &aes192CbcFlag,
+    &aes256CbcFlag,
+#endif
+#if !defined(NO_AES) && defined(WOLFSSL_AES_COUNTER) && \
+    LIBWOLFSSL_VERSION_HEX >= 0x05009000
+    &aes128CtrFlag,
+    &aes192CtrFlag,
+    &aes256CtrFlag,
+#endif
+#ifndef NO_DES3
+    &des3Cbc56Flag,
+    &des3Cbc112Flag,
+    &des3Cbc168Flag,
+#endif
+#ifdef HAVE_CAMELLIA
+    &camellia128CbcFlag,
+    &camellia192CbcFlag,
+    &camellia256CbcFlag,
+#endif
 };
 
 /* Decode a hex key string into the caller-provided keyOut buffer.
@@ -435,8 +428,15 @@ static int commonEntry(char isEncrypt)
     char* mode;
     int keySize;
     int block;
+    const char* algName = wolfCLU_getAlgFlagName();
+
+    if (algName == NULL) {
+        wolfCLU_LogError("no cipher was named");
+        return WOLFCLU_FATAL_ERROR;
+    }
+
     /* gets blocksize, algorithm, mode, and key size from name argument */
-    block = wolfCLU_getAlgo(3, (char *[]){(char*)"", (char*)"", decEncAlgString},
+    block = wolfCLU_getAlgo(3, (char *[]){(char*)"", (char*)"", (char*)algName},
             &alg, &mode, &keySize);
     if (block < 0) {
         wolfCLU_LogError("unable to find algorithm to use");
@@ -602,9 +602,9 @@ static int commonEntry(char isEncrypt)
         ret = wolfCLU_evp_crypto(cphr, mode,
                 (byte*)passwordArg.password, (byte*)keyBuf,
                 (keySize + 7) / 8, inFile, outFile, NULL,
-                (byte*)ivBuf, 0, 0,
+                (byte*)ivBuf, 0, isEncrypt,
                 isPkbVerion2 ? WOLFCLU_PBKDF2 : WOLFCLU_PBKDF1,
-                hashType == NULL ? wolfSSL_EVP_sha256() : hashType, isEncrypt,
+                hashType == NULL ? wolfSSL_EVP_sha256() : hashType, 0,
                 isBase64, noSalt, keyType);
     }
     else {
@@ -648,6 +648,8 @@ static int decryptEntry(void)
     return commonEntry(0);
 }
 
+WOLFCLI_COMMAND decryptCommand;
+
 WOLFCLI_COMMAND encryptCommand = {
     .name = "encrypt",
     .shortHelp = "Encrypt input file with provided algorithm",
@@ -656,12 +658,24 @@ WOLFCLI_COMMAND encryptCommand = {
 match the one used for encryption. For AES and 3DES (EVP path),\n\
 password-based decryption extracts the salt from the file and derives key\n\
 and IV from the password and salt. For legacy non-EVP ciphers (e.g.\n\
-Camellia), salt and IV are read from the file header."),
+Camellia), salt and IV are read from the file header.\n\
+\n\
+Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
+list below carries every cipher this build has, each with the older\n\
+size-last spelling it also answers to."),
     .commandEntry = encryptEntry,
     .flags =  {
         .flags = decryptFlags,
         .flagsSz = sizeof(decryptFlags) / sizeof(*decryptFlags),
     },
+    .altNames = {
+        .altNames = (const char*[]){"enc","-enc", "-encrypt"},
+        .altNamesSz = 3,
+    },
+    .commands = {
+        (WOLFCLI_COMMAND *[]){&decryptCommand},
+        1
+    }
 };
 
 WOLFCLI_COMMAND decryptCommand = {
@@ -673,10 +687,18 @@ match the one used for encryption. For AES and 3DES (EVP path),\n\
 password-based decryption extracts the salt from the file and derives key\n\
 and IV from the password and salt. For legacy non-EVP ciphers (e.g.\n\
 Camellia), salt and IV are read from the file header. For explicit keys\n\
-and IVs, you must provide the same values used during encryption."),
+and IVs, you must provide the same values used during encryption.\n\
+\n\
+Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
+list below carries every cipher this build has, each with the older\n\
+size-last spelling it also answers to."),
     .commandEntry = decryptEntry,
     .flags =  {
         .flags = decryptFlags,
         .flagsSz = sizeof(decryptFlags) / sizeof(*decryptFlags),
     },
+    .altNames = {
+        .altNames = (const char*[]){"dec","-dec", "-d", "-decrypt"},
+        .altNamesSz = 4,
+    }
 };

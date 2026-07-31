@@ -58,7 +58,7 @@ class EncDecRoundtripTest(unittest.TestCase):
         self.assertFalse(filecmp.cmp(INPUT_FILE, enc_file, shallow=False),
                          f"{algo} encrypted file is identical to input")
 
-        r = run_wolfssl("decrypt", "-alg", algo, "-in", enc_file,
+        r = run_wolfssl("-decrypt", algo, "-in", enc_file,
                         "-out", dec_file, "-pwd", password)
         self.assertEqual(r.returncode, 0,
                          f"decrypt {algo} failed: {r.stderr}")

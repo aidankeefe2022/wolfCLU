@@ -237,7 +237,7 @@ class DgstLargeFileTest(unittest.TestCase):
         self.assertFalse(filecmp.cmp(self.LARGE_FILE, enc_file, shallow=False),
                          "Encryption produced identical file")
 
-        r = run_wolfssl("decrypt", "-alg", "aes-256-cbc", "-in", enc_file,
+        r = run_wolfssl("enc", "-d", "-aes-256-cbc", "-in", enc_file,
                         "-out", dec_file, "-k", "12345678901234")
         self.assertEqual(r.returncode, 0, r.stderr)
 
