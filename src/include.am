@@ -4,19 +4,20 @@
 
 #/ kaleb /#
 bin_PROGRAMS = wolfssl
-wolfssl_SOURCES = src/clu_main.c \
+wolfssl_SOURCES = src_framework_change/clu_main.c \
                     src/clu_log.c \
                     src/tools/clu_funcs.c \
                     src/tools/clu_hex_to_bin.c \
                     src/tools/clu_rand.c \
+                    src_framework_change/crypto/clu_crypto_setup.c \
                     src/crypto/clu_crypto_setup.c \
                     src/crypto/clu_encrypt.c \
                     src/crypto/clu_decrypt.c \
                     src/crypto/clu_evp_crypto.c \
-                    src/hash/clu_hash_setup.c \
+                    src_framework_change/hash/clu_hash_setup.c \
                     src/hash/clu_hash.c \
                     src/hash/clu_alg_hash.c \
-                    src/benchmark/clu_bench_setup.c \
+                    src_framework_change/benchmark/clu_bench_setup.c \
                     src/benchmark/clu_benchmark.c \
                     src/x509/clu_request_setup.c \
                     src/x509/clu_ca_setup.c \
@@ -38,8 +39,10 @@ wolfssl_SOURCES = src/clu_main.c \
                     src/pkcs/clu_pkcs12.c \
                     src/client/client.c \
                     src/client/clu_client_setup.c \
-                    src/dsa/clu_dsa.c \
-                    src/dh/clu_dh.c \
+                    src_framework_change/dsa/clu_dsa.c \
+                    src_framework_change/dsa/clu_dsa_setup.c \
+                    src_framework_change/dh/clu_dh.c \
+                    src_framework_change/dh/clu_dh_setup.c \
                     src/server/server.c \
                     src/server/clu_server_setup.c \
                     src/pkcs/clu_pkcs7.c \
@@ -48,6 +51,7 @@ wolfssl_SOURCES = src/clu_main.c \
                     src/tools/clu_http.c \
                     src/tools/clu_scgi.c \
                     src/tools/clu_pem_der.c \
-                    src/ocsp/clu_ocsp.c
+                    src/ocsp/clu_ocsp.c \
+					src_framework_change/tools/clu_arg_handlers.c
 
 

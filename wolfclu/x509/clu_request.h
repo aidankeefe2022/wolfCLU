@@ -22,8 +22,13 @@
 #ifndef WOLFCLU_REQUEST_H
 #define WOLFCLU_REQUEST_H
 
-/* handles incoming arguments for certificate requests */
+#include <wolfcli/cli.h>
+
+extern WOLFCLI_COMMAND req;
+
 int wolfCLU_requestSetup(int argc, char** argv);
+
+/* handles incoming arguments for certificate requests */
 
 
 #endif /* WOLFCLU_REQUEST_H */

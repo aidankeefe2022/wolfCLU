@@ -153,9 +153,7 @@ static int SetASNIntCopy(int len, byte firstByte, byte* output)
         output[idx] = ASN_INTEGER;
     }
     /* Step over tag. */
-    idx += ASN_TAG_SZ;
-    /* Check if first byte has top bit set in which case a 0 is needed to
-     * maintain positive value. */
+    idx += ASN_TAG_SZ; /* Check if first byte has top bit set in which case a 0 is needed to maintain positive value. */
     if (firstByte & 0x80) {
         /* Add pre-prepended byte to length of data in INTEGER. */
         len++;

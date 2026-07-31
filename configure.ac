@@ -122,6 +122,9 @@ AC_ARG_WITH(wolfssl,
 # wolfCLU requires libwolfssl.
 AC_CHECK_LIB([wolfssl],[wolfCrypt_Init],,[AC_MSG_ERROR([libwolfssl is required and wasn't found on the system. It can be obtained from https://www.wolfssl.com/download.html/.])])
 
+# wolfCLU requires the wolfCLI framework library (libwolfcli).
+AC_CHECK_LIB([wolfcli],[wolfCLI_runCommand],,[AC_MSG_ERROR([libwolfcli is required and wasn't found on the system. Build and install the wolfCLI framework library first.])])
+
 # since we have autoconf available, we can use wolfssl options header
 AM_CFLAGS="$AM_CFLAGS -DHAVE_WOLFSSL_OPTIONS"
 

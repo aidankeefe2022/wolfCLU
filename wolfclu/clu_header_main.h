@@ -43,6 +43,8 @@ extern "C" {
 #endif
 #endif
 
+#include <wolfcli/cli.h>
+
 #undef CRL_REASON_UNSPECIFIED
 #undef CRL_REASON_KEY_COMPROMISE
 #undef CRL_REASON_CA_COMPROMISE
@@ -192,6 +194,8 @@ extern int   opterr ;
  * @param action forwarded from wolfCLU_main (-e, -d, -h, or -b)
  */
 int wolfCLU_setup(int argc, char** argv, char action);
+
+extern WOLFCLI_COMMAND decrypt;
 
 
 /* Handle ecparam mode
@@ -641,6 +645,21 @@ int wolfCLU_Rand(int argc, char** argv);
  */
 int wolfCLU_DsaParamSetup(int argc, char** argv);
 
+/*
+ * @brief function to generate a DSA key and print it to BIO
+ */
+int wolfCLU_DSA_Genkey(WOLFSSL_BIO* outBio, WC_RNG* rng, DsaKey* dsa);
+
+/*
+ * @brief function to generate DSA parameters of modSz bits
+ */
+int wolfCLU_DSA_CreateParams(DsaKey* dsa, WC_RNG* rng, word32 modSz);
+
+/*
+ * @brief function to print the parameters of a DsaKey to BIO
+ */
+int wolfCLU_DSA_PrintParams(DsaKey* dsa, WOLFSSL_BIO* outBio);
+
 
 /**
  * @brief function to encode/decode data in base64 format
@@ -651,7 +670,17 @@ int wolfCLU_Base64Setup(int argc, char** argv);
  * @brief function to generate dh params and keys
  */
 int wolfCLU_DhParamSetup(int argc, char** argv);
+/*
+ * @brief function to generate DH key and print them to BIO
+ */
+int wolfCLU_DH_Genkey(WOLFSSL_BIO* outBio, WC_RNG* rng, DhKey* dh);
 
+/*
+ * @brief function check the parameters of a DhKey
+ */
+int wolfCLU_DH_Check(DhKey* dh);
+int wolfCLU_DH_CreateParams(DhKey* dh, WC_RNG* rng, word32 modSz);
+int wolfCLU_DH_PrintParams(DhKey* dh, WOLFSSL_BIO* outBio);
 
 /**
  * @brief function to handle OCSP commands (client and responder)
@@ -850,8 +879,11 @@ int wolfCLU_ReadCertDer(const char* filename, byte** outDer);
  */
 int wolfCLU_GetStdinPassword(byte* password, word32* passwordSz);
 
-#ifdef __cplusplus
-}
-#endif
+extern WOLFCLI_COMMAND bench;
+extern WOLFCLI_COMMAND dhCommand;
+extern WOLFCLI_COMMAND dsaCommand;
+extern WOLFCLI_COMMAND hashCommand;
+extern WOLFCLI_COMMAND decryptCommand;
+extern WOLFCLI_COMMAND encryptCommand;
 
 #endif /* _WOLFSSL_CLU_HEADER_ */

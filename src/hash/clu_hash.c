@@ -45,17 +45,9 @@ int wolfCLU_hash(WOLFSSL_BIO* bioIn, WOLFSSL_BIO* bioOut, const char* alg,
     int     handled = 0;
     int     isCoding = 0;       /* base64 enc/dec output is raw, not hex */
     enum wc_HashType hashType = WC_HASH_TYPE_NONE;
-    WOLFSSL_BIO* tmp;
 
-    if (bioIn == NULL) {
-        tmp = wolfSSL_BIO_new(wolfSSL_BIO_s_file());
-        if (tmp == NULL) {
-            return MEMORY_E;
-        }
-        wolfSSL_BIO_set_fp(tmp, stdin, BIO_NOCLOSE);
-    }
-    else {
-        tmp = bioIn;
+    if (bioIn == NULL || bioOut == NULL) {
+        return USER_INPUT_ERROR;
     }
 
     /* Output buffer size: digest size for hash algorithms (default is
@@ -63,8 +55,6 @@ int wolfCLU_hash(WOLFSSL_BIO* bioIn, WOLFSSL_BIO* bioOut, const char* alg,
     outSz = (size == 0) ? WC_MAX_DIGEST_SIZE : size;
     output = (byte*)XMALLOC(outSz, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     if (output == NULL) {
-        if (bioIn == NULL)
-            wolfSSL_BIO_free(tmp);
         return MEMORY_E;
     }
     XMEMSET(output, 0, outSz);
@@ -95,7 +85,7 @@ int wolfCLU_hash(WOLFSSL_BIO* bioIn, WOLFSSL_BIO* bioOut, const char* alg,
 
     if (hashType != WC_HASH_TYPE_NONE) {
         word32 digestSz = (word32)outSz;
-        ret = wolfCLU_streamHashBio(tmp, hashType, output, &digestSz);
+        ret = wolfCLU_streamHashBio(bioIn, hashType, output, &digestSz);
         if (ret == WOLFCLU_SUCCESS) {
             outSz = (int)digestSz;
         }
@@ -110,7 +100,7 @@ int wolfCLU_hash(WOLFSSL_BIO* bioIn, WOLFSSL_BIO* bioOut, const char* alg,
             ret = WOLFCLU_FATAL_ERROR;
         }
         while (ret == WOLFCLU_SUCCESS) {
-            bytesRead = wolfSSL_BIO_read(tmp, chunk, sizeof(chunk));
+            bytesRead = wolfSSL_BIO_read(bioIn, chunk, sizeof(chunk));
             if (bytesRead < 0) {
                 wolfCLU_LogError("Error reading data");
                 ret = WOLFCLU_FATAL_ERROR;
@@ -139,31 +129,7 @@ int wolfCLU_hash(WOLFSSL_BIO* bioIn, WOLFSSL_BIO* bioOut, const char* alg,
      * Init/Update/Final doesn't apply). size is taken from XFTELL
      * but bounded to INT_MAX */
     if (!handled && ret == WOLFCLU_SUCCESS) {
-        long fileLen = MAX_STDINSZ;
         int  inputSz = MAX_STDINSZ;
-        XFILE f;
-
-        if (bioIn != NULL) {
-            if (wolfSSL_BIO_get_fp(tmp, &f) != WOLFSSL_SUCCESS) {
-                wolfCLU_LogError("Unable to get raw file pointer");
-                ret = WOLFCLU_FATAL_ERROR;
-            }
-            if (ret == WOLFCLU_SUCCESS && XFSEEK(f, 0, XSEEK_END) != 0) {
-                wolfCLU_LogError("Unable to seek end of file");
-                ret = WOLFCLU_FATAL_ERROR;
-            }
-            if (ret == WOLFCLU_SUCCESS) {
-                fileLen = XFTELL(f);
-                wolfSSL_BIO_reset(tmp);
-                if (fileLen < 0 || fileLen > INT_MAX) {
-                    wolfCLU_LogError("Input too large for base64 buffer");
-                    ret = WOLFCLU_FATAL_ERROR;
-                }
-                else {
-                    inputSz = (int)fileLen;
-                }
-            }
-        }
 
         if (ret == WOLFCLU_SUCCESS) {
             input = (byte*)XMALLOC(inputSz, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
@@ -172,7 +138,7 @@ int wolfCLU_hash(WOLFSSL_BIO* bioIn, WOLFSSL_BIO* bioOut, const char* alg,
             }
         }
         if (ret == WOLFCLU_SUCCESS) {
-            inputSz = wolfSSL_BIO_read(tmp, input, inputSz);
+            inputSz = wolfSSL_BIO_read(bioIn, input, inputSz);
             if (inputSz < 0) {
                 wolfCLU_LogError("Error reading data");
                 ret = WOLFCLU_FATAL_ERROR;
@@ -235,40 +201,21 @@ int wolfCLU_hash(WOLFSSL_BIO* bioIn, WOLFSSL_BIO* bioOut, const char* alg,
     }
 #endif /* !NO_CODING */
 
-    if (bioIn == NULL) {
-        wolfSSL_BIO_free(tmp);
-    }
 
     if (ret == WOLFCLU_SUCCESS && handled) {
-        if (bioOut != NULL) {
+        int i;
+        if (isCoding) {
+            /* base64 enc/dec output is text/raw bytes, not a digest */
             if (wolfSSL_BIO_write(bioOut, output, outSz) != outSz) {
                 ret = WOLFCLU_FATAL_ERROR;
             }
         }
         else {
-            int i;
-            /* write hashed output to terminal */
-            tmp = wolfSSL_BIO_new(wolfSSL_BIO_s_file());
-            if (tmp == NULL) {
-                ret = MEMORY_E;
+            /* write hash digest as hex */
+            for (i = 0; i < outSz; i++) {
+                wolfSSL_BIO_printf(bioOut, "%02x", output[i]);
             }
-            else {
-                wolfSSL_BIO_set_fp(tmp, stdout, BIO_NOCLOSE);
-                if (isCoding) {
-                    /* base64 enc/dec output is text/raw bytes, not a digest */
-                    if (wolfSSL_BIO_write(tmp, output, outSz) != outSz) {
-                        ret = WOLFCLU_FATAL_ERROR;
-                    }
-                }
-                else {
-                    /* write hash digest as hex */
-                    for (i = 0; i < outSz; i++) {
-                        wolfSSL_BIO_printf(tmp, "%02x", output[i]);
-                    }
-                    wolfSSL_BIO_printf(tmp, "\n");
-                }
-                wolfSSL_BIO_free(tmp);
-            }
+            wolfSSL_BIO_printf(bioOut, "\n");
         }
     }
     else if (!handled && ret == WOLFCLU_SUCCESS) {

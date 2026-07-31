@@ -33,6 +33,10 @@
 #include <wolfssl/wolfcrypt/types.h>
 
 #if defined(WOLFSSL_CERT_REQ) && !defined(WOLFCLU_NO_FILESYSTEM)
+
+/* Value slots owned by the x509 command. The flag table registers &slot so the
+ * parser writes the parsed argument (or the flag name, for presence flags) back
+ * through each handle, and the command entry reads its own slots. */
 static void wolfCLU_certgenHelp(void) {
     WOLFCLU_LOG(WOLFCLU_L0, "Arguments:");
     WOLFCLU_LOG(WOLFCLU_L0, "\t-in input file to read from");

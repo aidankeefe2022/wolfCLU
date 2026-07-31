@@ -129,7 +129,7 @@ static void myFipsCb(int ok, int err, const char* hash)
 }
 #endif
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
     int     flag = 0;
     int     ret = WOLFCLU_SUCCESS;
@@ -180,7 +180,8 @@ int main(int argc, char** argv)
     /* retain old version of modes where '-' is used. i.e -x509, -req */
     if (argc > 1 && argv[1] != NULL && argv[1][0] == '-') {
         argv[1] = argv[1] + 1;
-        flag = getMode(argv[1]);
+        flag = getMode(((char**)argv)[1]);
+        argv[1] = argv[1] - 1;
 
         /* if -rsa was used then it is the older sign/verify version of rsa */
         if (flag == WOLFCLU_RSA) flag = WOLFCLU_RSALEGACY;
@@ -190,7 +191,7 @@ int main(int argc, char** argv)
      * compatibility with the behavior of the OpenSSL command line utility
      */
     else {
-        flag = wolfCLU_GetOpt(argc, argv,"", mode_options, &longIndex);
+        flag = wolfCLU_GetOpt(argc, (char**)argv,"", mode_options, &longIndex);
     }
 
     switch (flag) {
@@ -201,85 +202,76 @@ int main(int argc, char** argv)
 
         case WOLFCLU_CRYPT:
             /* generic 'enc' used, default to encrypt unless -d was used */
-            ret = wolfCLU_checkForArg("-d", 2, argc, argv);
+            ret = wolfCLU_checkForArg("-d", 2, argc, (char**)argv);
             if (ret > 0) {
-                ret = wolfCLU_setup(argc, argv, 'd');
+                ret = wolfCLI_runCommand(argc-1, argv+1, &decrypt);
             }
             else {
-                ret = wolfCLU_setup(argc, argv, 'e');
+                ret = wolfCLU_setup(argc, (char**)argv, 'e');
             }
             break;
 
         case WOLFCLU_ENCRYPT:
-            ret = wolfCLU_setup(argc, argv, 'e');
+            ret = wolfCLU_setup(argc, (char**)argv, 'e');
             break;
 
         case WOLFCLU_DECRYPT:
-            ret = wolfCLU_setup(argc, argv, 'd');
+            ret = wolfCLI_runCommand(argc-1, argv+1, &decrypt);
             break;
 
         case WOLFCLU_CA:
-            ret = wolfCLU_CASetup(argc, argv);
+            ret = wolfCLU_CASetup(argc, (char**)argv);
             break;
 
         case WOLFCLU_BENCHMARK:
-            ret = wolfCLU_benchSetup(argc, argv);
+            ret = wolfCLI_runCommand(argc - 1, argv + 1, &bench);
             break;
 
         case WOLFCLU_HASH:
-            ret = wolfCLU_hashSetup(argc, argv);
+            ret = wolfCLI_runCommand(argc-1, argv + 1, &hashCommand);
             break;
 
         case WOLFCLU_MD5:
-            ret = wolfCLU_algHashSetup(argc, argv, WOLFCLU_MD5);
-            break;
-
         case WOLFCLU_CERT_SHA256:
-            ret = wolfCLU_algHashSetup(argc, argv, WOLFCLU_CERT_SHA256);
-            break;
-
         case WOLFCLU_CERT_SHA384:
-            ret = wolfCLU_algHashSetup(argc, argv, WOLFCLU_CERT_SHA384);
-            break;
-
         case WOLFCLU_CERT_SHA512:
-            ret = wolfCLU_algHashSetup(argc, argv, WOLFCLU_CERT_SHA512);
+            ret = wolfCLI_runCommand(argc, argv, &hashCommand);
             break;
 
         case WOLFCLU_X509:
-            ret = wolfCLU_certSetup(argc, argv);
+            ret = wolfCLU_certSetup(argc, (char**)argv);
             break;
 
         case WOLFCLU_REQUEST:
-            ret = wolfCLU_requestSetup(argc, argv);
+            ret = wolfCLU_requestSetup(argc, (char**)argv);
             break;
 
         case WOLFCLU_GEN_KEY:
-            ret = wolfCLU_genKeySetup(argc, argv);
+            ret = wolfCLU_genKeySetup(argc, (char**)argv);
             break;
 
         case WOLFCLU_ECPARAM:
-            ret = wolfCLU_ecparam(argc, argv);
+            ret = wolfCLU_ecparam(argc, (char**)argv);
             break;
 
         case WOLFCLU_PKEY:
-            ret = wolfCLU_pKeySetup(argc, argv);
+            ret = wolfCLU_pKeySetup(argc, (char**)argv);
             break;
 
         case WOLFCLU_DGST:
-            ret = wolfCLU_dgst_setup(argc, argv);
+            ret = wolfCLU_dgst_setup(argc, (char**)argv);
             break;
 
         case WOLFCLU_VERIFY:
-            ret = wolfCLU_x509Verify(argc, argv);
+            ret = wolfCLU_x509Verify(argc, (char**)argv);
             break;
 
         case WOLFCLU_CRL:
-            ret = wolfCLU_CRLVerify(argc, argv);
+            ret = wolfCLU_CRLVerify(argc, (char**)argv);
             break;
 
         case WOLFCLU_RSA:
-            ret = wolfCLU_RSA(argc, argv);
+            ret = wolfCLU_RSA(argc, (char**)argv);
             break;
 
         case WOLFCLU_RSALEGACY:
@@ -288,49 +280,49 @@ int main(int argc, char** argv)
         case WOLFCLU_DILITHIUM:
         case WOLFCLU_XMSS:
         case WOLFCLU_XMSSMT:
-            ret = wolfCLU_sign_verify_setup(argc, argv);
+            ret = wolfCLU_sign_verify_setup(argc, (char**)argv);
             break;
 
         case WOLFCLU_PKCS7:
-            ret = wolfCLU_PKCS7(argc, argv);
+            ret = wolfCLU_PKCS7(argc, (char**)argv);
             break;
 
         case WOLFCLU_PKCS8:
-            ret = wolfCLU_PKCS8(argc, argv);
+            ret = wolfCLU_PKCS8(argc, (char**)argv);
             break;
 
         case WOLFCLU_PKCS12:
-            ret = wolfCLU_PKCS12(argc, argv);
+            ret = wolfCLU_PKCS12(argc, (char**)argv);
             break;
 
         case WOLFCLU_CLIENT:
-            ret = wolfCLU_Client(argc, argv);
+            ret = wolfCLU_Client(argc, (char**)argv);
             break;
 
         case WOLFCLU_SERVER:
-            ret = wolfCLU_Server(argc, argv);
+            ret = wolfCLU_Server(argc, (char**)argv);
             break;
 
         case WOLFCLU_RAND:
-            ret = wolfCLU_Rand(argc, argv);
+            ret = wolfCLU_Rand(argc, (char**)argv);
             break;
 
         case WOLFCLU_DSA:
-            ret = wolfCLU_DsaParamSetup(argc, argv);
+            ret = wolfCLI_runCommand(argc - 1, argv + 1, &dsaCommand);
             break;
 
         case WOLFCLU_DH:
-            ret = wolfCLU_DhParamSetup(argc, argv);
+            ret = wolfCLI_runCommand(argc - 1, argv + 1, &dhCommand);
             break;
 
 #if defined(HAVE_OCSP) && defined(HAVE_OCSP_RESPONDER)
         case WOLFCLU_OCSP:
-            ret = wolfCLU_OcspSetup(argc, argv);
+            ret = wolfCLU_OcspSetup(argc, (char**)argv);
             break;
 #endif
 
         case WOLFCLU_BASE64:
-            ret = wolfCLU_Base64Setup(argc, argv);
+            ret = wolfCLU_Base64Setup(argc, (char**)argv);
             break;
 
         case WOLFCLU_HELP:
