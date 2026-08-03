@@ -31,16 +31,21 @@ int wolfCLU_handleOutFile(const char* arg, void* out)
     return ret;
 }
 
+/* The {capacity, buffer} pair the -key/-iv/-pwd flags hand this handler. */
+struct copyString {
+    unsigned int cap;
+    char* data;
+};
+
 int wolfCLU_handleCopyString(const char* arg, void* out)
 {
+    struct copyString* string = (struct copyString*)out;
+
     if (out == NULL) {
         wolfCLU_LogError("out was null");
         return WOLFCLI_FATAL_ERROR;
     }
-    struct string {
-        unsigned int cap;
-        char* data;
-    } *string = (struct string*)out;
+
     XSTRNCPY(string->data, arg, string->cap);
     return WOLFCLI_SUCCESS;
 }
@@ -49,6 +54,7 @@ int wolfCLU_handleCopyString(const char* arg, void* out)
 int wolfCLU_handleGetHash(const char* arg, void* out)
 {
     const WOLFSSL_EVP_MD* hashType = wolfSSL_EVP_get_digestbyname(arg);
+
     if (hashType == NULL) {
         wolfCLU_LogError("Hash type %s is not avalible", arg);
         return WOLFCLI_FATAL_ERROR;

@@ -33,9 +33,9 @@ static int handleInput(const char* arg, void* out)
 {
     int ret = WOLFCLU_SUCCESS;
     DerBuffer* pDer = NULL;
+    WOLFSSL_BIO* bioIn = NULL;
     (void)out;
 
-    WOLFSSL_BIO* bioIn = NULL;
     if (wolfCLU_handleInFile(arg, &bioIn) != WOLFCLI_SUCCESS) {
         bioIn = wolfSSL_BIO_new_fp(stdin, BIO_NOCLOSE);
         if (bioIn == NULL) {
@@ -85,35 +85,63 @@ static int handleInput(const char* arg, void* out)
 
 
 static WOLFCLI_FLAG inFlag = {
-    .flag = "-in",
-    .shortHelp = "File with DSA parameters PEM format",
-    .longHelp = "File with DSA parameters PEM format",
-    .argHandler = handleInput,
-    .value = &in,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG | WOLFCLI_FLAG_REQUIRED,
+    /*flag=*/"-in",
+    /*shortHelp=*/"File with DSA parameters PEM format",
+    /*longHelp=*/"File with DSA parameters PEM format",
+    /*value=*/&in,
+    /*argHandler=*/handleInput,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG | WOLFCLI_FLAG_REQUIRED,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG outFlag = {
-    .flag = "-out",
-    .shortHelp = "File to output Params/Key to (default stdout)",
-    .longHelp  = "File to output Params/Key to (default stdout)",
-    .argHandler = wolfCLU_handleOutFile,
-    .value = &outFile,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
+    /*flag=*/"-out",
+    /*shortHelp=*/"File to output Params/Key to (default stdout)",
+    /*longHelp=*/"File to output Params/Key to (default stdout)",
+    /*value=*/&outFile,
+    /*argHandler=*/wolfCLU_handleOutFile,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG genkeyFlag = {
-    .flag = "-genkey",
-    .shortHelp = "Generate DSA key using params",
-    .longHelp = "Generate DSA key using params",
-    .value = &genkeyArg,
+    /*flag=*/"-genkey",
+    /*shortHelp=*/"Generate DSA key using params",
+    /*longHelp=*/"Generate DSA key using params",
+    /*value=*/&genkeyArg,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG noOutFlag = {
-    .flag = "-noout",
-    .shortHelp = "Do not print out DSA parameters",
-    .longHelp  = "Do not print out DSA parameters",
-    .value     = &noOutArg,
+    /*flag=*/"-noout",
+    /*shortHelp=*/"Do not print out DSA parameters",
+    /*longHelp=*/"Do not print out DSA parameters",
+    /*value=*/&noOutArg,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG* flags[] = {
@@ -223,39 +251,48 @@ static int bit1024Entry(void)
 }
 
 static WOLFCLI_COMMAND bit3072 = {
-    .name = "3072",
-    .shortHelp = "Create a DSA params with 3072 bits",
-    .longHelp  = "Create a DSA params with 3072 bits",
-    .commandCleanup = cleanup,
-    .commandEntry   = bit3072Entry,
-    .flags = {
-        .flags = genParamsFlags,
-        .flagsSz = sizeof(genParamsFlags) / sizeof(*genParamsFlags)
+    /*name=*/"3072",
+    /*shortHelp=*/"Create a DSA params with 3072 bits",
+    /*longHelp=*/"Create a DSA params with 3072 bits",
+    /*commandEntry=*/bit3072Entry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/genParamsFlags,
+        /*flagsSz=*/sizeof(genParamsFlags) / sizeof(*genParamsFlags)
     },
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 static WOLFCLI_COMMAND bit2048 = {
-    .name = "2048",
-    .shortHelp = "Create a DSA params with 2048 bits",
-    .longHelp  = "Create a DSA params with 2048 bits",
-    .commandCleanup = cleanup,
-    .commandEntry   = bit2048Entry,
-    .flags = {
-        .flags = genParamsFlags,
-        .flagsSz = sizeof(genParamsFlags) / sizeof(*genParamsFlags)
+    /*name=*/"2048",
+    /*shortHelp=*/"Create a DSA params with 2048 bits",
+    /*longHelp=*/"Create a DSA params with 2048 bits",
+    /*commandEntry=*/bit2048Entry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/genParamsFlags,
+        /*flagsSz=*/sizeof(genParamsFlags) / sizeof(*genParamsFlags)
     },
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 static WOLFCLI_COMMAND bit1024 = {
-    .name = "1024",
-    .shortHelp = "Create a DSA params with 1024 bits",
-    .longHelp  = "Create a DSA params with 1024 bits",
-    .commandCleanup = cleanup,
-    .commandEntry   = bit1024Entry,
-    .flags = {
-        .flags = genParamsFlags,
-        .flagsSz = sizeof(genParamsFlags) / sizeof(*genParamsFlags)
+    /*name=*/"1024",
+    /*shortHelp=*/"Create a DSA params with 1024 bits",
+    /*longHelp=*/"Create a DSA params with 1024 bits",
+    /*commandEntry=*/bit1024Entry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/genParamsFlags,
+        /*flagsSz=*/sizeof(genParamsFlags) / sizeof(*genParamsFlags)
     },
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 static int dsaEntry(void)
@@ -271,10 +308,7 @@ static int dsaEntry(void)
     return runParams(0);
 }
 
-WOLFCLI_COMMAND dsaCommand = {
-    .name = "dsaparam",
-    .shortHelp = "Generates or reads DSA parameters and keys",
-    .longHelp = (
+static const char dsaLongHelp[] =
 "Generates DSA parameters and keys, or reads and displays existing DSA\n\
 parameters. The number of bits is a subcommand rather than a trailing\n\
 positional argument, so params are generated with 'dsaparam 2048' and the\n\
@@ -283,17 +317,26 @@ sizes on offer are the ones listed under SUB COMMANDS below.\n\
 Without a size subcommand nothing is generated and the params have to be\n\
 read from -in. -in belongs to dsaparam itself rather than to a size, so\n\
 it has to come before the subcommand; the other flags work on either\n\
-side of it."),
-    .flags = {
-        .flags = flags,
-        .flagsSz = sizeof(flags) / sizeof(*flags)
+side of it.";
+
+static WOLFCLI_COMMAND* dsaSubCommands[] = { &bit1024, &bit2048, &bit3072 };
+
+WOLFCLI_COMMAND dsaCommand = {
+    /*name=*/"dsaparam",
+    /*shortHelp=*/"Generates or reads DSA parameters and keys",
+    /*longHelp=*/dsaLongHelp,
+    /*commandEntry=*/dsaEntry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/flags,
+        /*flagsSz=*/sizeof(flags) / sizeof(*flags)
     },
-    .commands = {
-        .commands = (WOLFCLI_COMMAND *[]){&bit1024,&bit2048,&bit3072},
-        .commandsSz = 3
+    /*commands=*/{
+        /*commands=*/dsaSubCommands,
+        /*commandsSz=*/sizeof(dsaSubCommands) / sizeof(*dsaSubCommands)
     },
-    .commandEntry = dsaEntry,
-    .commandCleanup = cleanup
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 #else /* NO_DSA */
@@ -305,10 +348,15 @@ static int dsaEntry(void)
 }
 
 WOLFCLI_COMMAND dsaCommand = {
-    .name = "dsaparam",
-    .shortHelp = "Generates or reads DSA parameters and keys",
-    .longHelp = "DSA support not compiled into wolfSSL",
-    .commandEntry = dsaEntry,
+    /*name=*/"dsaparam",
+    /*shortHelp=*/"Generates or reads DSA parameters and keys",
+    /*longHelp=*/"DSA support not compiled into wolfSSL",
+    /*commandEntry=*/dsaEntry,
+    /*commandCleanup=*/NULL,
+    /*flags=*/{0},
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 #endif /* !NO_DSA */

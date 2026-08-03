@@ -33,9 +33,9 @@ static int handleInput(const char* arg, void* out)
 {
     int ret = WOLFCLI_SUCCESS;
     DerBuffer* pDer = NULL;
+    WOLFSSL_BIO* bioIn = NULL;
     (void)out;
 
-    WOLFSSL_BIO* bioIn = NULL;
     if (wolfCLU_handleInFile(arg, &bioIn) != WOLFCLI_SUCCESS) {
         bioIn = wolfSSL_BIO_new_fp(stdin, BIO_NOCLOSE);
         if (bioIn == NULL) {
@@ -86,42 +86,78 @@ static int handleInput(const char* arg, void* out)
 
 
 static WOLFCLI_FLAG inFlag = {
-    .flag = "-in",
-    .shortHelp = "Input file with dh params",
-    .longHelp = "Input file with dh params",
-    .argHandler = handleInput,
-    .value = &in,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG | WOLFCLI_FLAG_REQUIRED,
+    /*flag=*/"-in",
+    /*shortHelp=*/"Input file with dh params",
+    /*longHelp=*/"Input file with dh params",
+    /*value=*/&in,
+    /*argHandler=*/handleInput,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG | WOLFCLI_FLAG_REQUIRED,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG outFlag = {
-    .flag = "-out",
-    .shortHelp = "Output file with DH params/key defaults to stdout",
-    .longHelp = "Output file with DH params/key defaults to stdout",
-    .argHandler = wolfCLU_handleOutFile,
-    .value = &outFile,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
+    /*flag=*/"-out",
+    /*shortHelp=*/"Output file with DH params/key defaults to stdout",
+    /*longHelp=*/"Output file with DH params/key defaults to stdout",
+    /*value=*/&outFile,
+    /*argHandler=*/wolfCLU_handleOutFile,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG genkeyFlag = {
-    .flag = "-genkey",
-    .shortHelp = "Generate DH key using params",
-    .longHelp = "Generate DH key using params",
-    .value = &genkeyArg,
+    /*flag=*/"-genkey",
+    /*shortHelp=*/"Generate DH key using params",
+    /*longHelp=*/"Generate DH key using params",
+    /*value=*/&genkeyArg,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG checkFlag = {
-    .flag = "-check",
-    .shortHelp = "Check if parameters are valid",
-    .longHelp = "Check if parameters are valid",
-    .value    = &checkArg,
+    /*flag=*/"-check",
+    /*shortHelp=*/"Check if parameters are valid",
+    /*longHelp=*/"Check if parameters are valid",
+    /*value=*/&checkArg,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG noOutFlag = {
-    .flag = "-noout",
-    .shortHelp = "Do not print out DH parameters",
-    .longHelp  = "Do not print out DH parameters",
-    .value     = &noOutArg,
+    /*flag=*/"-noout",
+    /*shortHelp=*/"Do not print out DH parameters",
+    /*longHelp=*/"Do not print out DH parameters",
+    /*value=*/&noOutArg,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG* flags[] = {
@@ -274,39 +310,48 @@ static int bit1024Entry(void)
 }
 
 static WOLFCLI_COMMAND bit4096 = {
-    .name = "4096",
-    .shortHelp = "Create a DH params with 4096 bits",
-    .longHelp  = "Create a DH params with 4096 bits",
-    .commandCleanup = cleanup,
-    .commandEntry   = bit4096Entry,
-    .flags = {
-        .flags = genKeyFlags,
-        .flagsSz = sizeof(genKeyFlags) / sizeof(*genKeyFlags)
+    /*name=*/"4096",
+    /*shortHelp=*/"Create a DH params with 4096 bits",
+    /*longHelp=*/"Create a DH params with 4096 bits",
+    /*commandEntry=*/bit4096Entry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/genKeyFlags,
+        /*flagsSz=*/sizeof(genKeyFlags) / sizeof(*genKeyFlags)
     },
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 static WOLFCLI_COMMAND bit2048 = {
-    .name = "2048",
-    .shortHelp = "Create a DH params with 2048 bits",
-    .longHelp  = "Create a DH params with 2048 bits",
-    .commandCleanup = cleanup,
-    .commandEntry   = bit2048Entry,
-    .flags = {
-        .flags = genKeyFlags,
-        .flagsSz = sizeof(genKeyFlags) / sizeof(*genKeyFlags)
+    /*name=*/"2048",
+    /*shortHelp=*/"Create a DH params with 2048 bits",
+    /*longHelp=*/"Create a DH params with 2048 bits",
+    /*commandEntry=*/bit2048Entry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/genKeyFlags,
+        /*flagsSz=*/sizeof(genKeyFlags) / sizeof(*genKeyFlags)
     },
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 static WOLFCLI_COMMAND bit1024 = {
-    .name = "1024",
-    .shortHelp = "Create a DH params with 1024 bits",
-    .longHelp  = "Create a DH params with 1024 bits",
-    .commandCleanup = cleanup,
-    .commandEntry   = bit1024Entry,
-    .flags = {
-        .flags = genKeyFlags,
-        .flagsSz = sizeof(genKeyFlags) / sizeof(*genKeyFlags)
+    /*name=*/"1024",
+    /*shortHelp=*/"Create a DH params with 1024 bits",
+    /*longHelp=*/"Create a DH params with 1024 bits",
+    /*commandEntry=*/bit1024Entry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/genKeyFlags,
+        /*flagsSz=*/sizeof(genKeyFlags) / sizeof(*genKeyFlags)
     },
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 static int dhEntry(void)
@@ -353,10 +398,7 @@ static int dhEntry(void)
     return ret;
 }
 
-WOLFCLI_COMMAND dhCommand = {
-    .name = "dhparam",
-    .shortHelp = "Generates or reads DH parameters and keys",
-    .longHelp = (
+static const char dhLongHelp[] =
 "Generates Diffie-Hellman parameters and keys, or reads and displays\n\
 existing DH parameters. The number of bits is a subcommand rather than a\n\
 trailing positional argument, so params are generated with 'dhparam 2048'\n\
@@ -365,17 +407,26 @@ and the sizes on offer are the ones listed under SUB COMMANDS below.\n\
 Without a size subcommand nothing is generated and the params are read\n\
 from -in instead. -in belongs to dhparam itself rather than to a size, so\n\
 it has to come before the subcommand; the other flags work on either\n\
-side of it."),
-    .flags = {
-        .flags = flags,
-        .flagsSz = sizeof(flags) / sizeof(*flags)
+side of it.";
+
+static WOLFCLI_COMMAND* dhSubCommands[] = { &bit1024, &bit2048, &bit4096 };
+
+WOLFCLI_COMMAND dhCommand = {
+    /*name=*/"dhparam",
+    /*shortHelp=*/"Generates or reads DH parameters and keys",
+    /*longHelp=*/dhLongHelp,
+    /*commandEntry=*/dhEntry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/flags,
+        /*flagsSz=*/sizeof(flags) / sizeof(*flags)
     },
-    .commands = {
-        .commands = (WOLFCLI_COMMAND *[]){&bit1024,&bit2048,&bit4096},
-        .commandsSz = 3
+    /*commands=*/{
+        /*commands=*/dhSubCommands,
+        /*commandsSz=*/sizeof(dhSubCommands) / sizeof(*dhSubCommands)
     },
-    .commandEntry = dhEntry,
-    .commandCleanup = cleanup
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 

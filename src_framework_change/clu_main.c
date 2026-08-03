@@ -36,17 +36,15 @@ static WOLFCLI_COMMAND* rootSubCommands[] = {
     &hashCommand,
     &decryptCommand,
     &encryptCommand,
+    &randCommand,
 };
 
-WOLFCLI_COMMAND rootCommand = {
-    .name = "wolfssl",
-    .shortHelp = "Command Line Utility for Interacting "
-        "With the WolfSSL library",
-    .longHelp = (
+/* Kept under the 509 character string literal limit C90 compilers are only
+ * required to support. */
+static const char rootLongHelp[] =
 "The wolfssl program is a command line tool for using various cryptographic \n\
-functions of wolfSSL's wolfCrypt cryptography library. \n\
-wolfSSL supports industry standards up to the current TLSv1.3 and \n\
-DTLSv1.3 and offers a simple API for ease of use. It can be utilized for: \n\
+functions of wolfSSL's wolfCrypt cryptography library, which supports \n\
+standards up to TLSv1.3 and DTLSv1.3. It can be utilized for: \n\
     - Encryption and decryption with ciphers \n\
     - Hashing functionality \n\
     - Benchmark utilities \n\
@@ -54,11 +52,22 @@ DTLSv1.3 and offers a simple API for ease of use. It can be utilized for: \n\
     - Certificate requests and signing (CA) \n\
     - Key generation and key format conversion \n\
     - Signing and signature verification \n\
-    - TLS client/server testing "),
-    .commands = {
-        .commands = rootSubCommands,
-        .commandsSz = sizeof(rootSubCommands) / sizeof(*rootSubCommands),
+    - TLS client/server testing ";
+
+WOLFCLI_COMMAND rootCommand = {
+    /*name=*/"wolfssl",
+    /*shortHelp=*/"Command Line Utility for Interacting "
+        "With the WolfSSL library",
+    /*longHelp=*/rootLongHelp,
+    /*commandEntry=*/NULL,
+    /*commandCleanup=*/NULL,
+    /*flags=*/{0},
+    /*commands=*/{
+        /*commands=*/rootSubCommands,
+        /*commandsSz=*/sizeof(rootSubCommands) / sizeof(*rootSubCommands)
     },
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };
 
 #ifdef HAVE_FIPS

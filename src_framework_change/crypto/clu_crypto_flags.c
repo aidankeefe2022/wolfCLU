@@ -46,134 +46,230 @@ static char algFlagSeen;
 /* defined below, once the flags it covers exist */
 static WOLFCLI_FLAG_GROUP algGroup;
 
+/* Every cipher flag belongs to algGroup and carries exactly one alt name.
+ * C89 has no compound literals, so the one element arrays each of those needs
+ * are named here rather than written inline in the initializer. */
+static WOLFCLI_FLAG_GROUP* algGroupOnly[] = { &algGroup };
+
+/* The initializers below are positional, so their field order has to follow
+ * struct WOLFCLI_FLAG in wolfcli/cli.h. */
+
 #ifndef NO_AES
+static const char* aes128CbcAltNames[] = { "-aes-cbc-128" };
+static const char* aes192CbcAltNames[] = { "-aes-cbc-192" };
+static const char* aes256CbcAltNames[] = { "-aes-cbc-256" };
+
 WOLFCLI_FLAG aes128CbcFlag = {
-    .flag = "-aes-128-cbc",
-    .shortHelp = "Process the data with AES 128 bit CBC",
-    .longHelp = "Process the data with AES 128 bit CBC. Also accepted as "
-                "-aes-cbc-128",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-aes-cbc-128"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-aes-128-cbc",
+    /*shortHelp=*/"Process the data with AES 128 bit CBC",
+    /*longHelp=*/"Process the data with AES 128 bit CBC. Also accepted as "
+                 "-aes-cbc-128",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{aes128CbcAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG aes192CbcFlag = {
-    .flag = "-aes-192-cbc",
-    .shortHelp = "Process the data with AES 192 bit CBC",
-    .longHelp = "Process the data with AES 192 bit CBC. Also accepted as "
-                "-aes-cbc-192",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-aes-cbc-192"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-aes-192-cbc",
+    /*shortHelp=*/"Process the data with AES 192 bit CBC",
+    /*longHelp=*/"Process the data with AES 192 bit CBC. Also accepted as "
+                 "-aes-cbc-192",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{aes192CbcAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG aes256CbcFlag = {
-    .flag = "-aes-256-cbc",
-    .shortHelp = "Process the data with AES 256 bit CBC",
-    .longHelp = "Process the data with AES 256 bit CBC. Also accepted as "
-                "-aes-cbc-256",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-aes-cbc-256"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-aes-256-cbc",
+    /*shortHelp=*/"Process the data with AES 256 bit CBC",
+    /*longHelp=*/"Process the data with AES 256 bit CBC. Also accepted as "
+                 "-aes-cbc-256",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{aes256CbcAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 #endif /* !NO_AES */
 
 #if !defined(NO_AES) && defined(WOLFSSL_AES_COUNTER) && \
     LIBWOLFSSL_VERSION_HEX >= 0x05009000
+static const char* aes128CtrAltNames[] = { "-aes-ctr-128" };
+static const char* aes192CtrAltNames[] = { "-aes-ctr-192" };
+static const char* aes256CtrAltNames[] = { "-aes-ctr-256" };
+
 WOLFCLI_FLAG aes128CtrFlag = {
-    .flag = "-aes-128-ctr",
-    .shortHelp = "Process the data with AES 128 bit CTR",
-    .longHelp = "Process the data with AES 128 bit CTR. Also accepted as "
-                "-aes-ctr-128",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-aes-ctr-128"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-aes-128-ctr",
+    /*shortHelp=*/"Process the data with AES 128 bit CTR",
+    /*longHelp=*/"Process the data with AES 128 bit CTR. Also accepted as "
+                 "-aes-ctr-128",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{aes128CtrAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG aes192CtrFlag = {
-    .flag = "-aes-192-ctr",
-    .shortHelp = "Process the data with AES 192 bit CTR",
-    .longHelp = "Process the data with AES 192 bit CTR. Also accepted as "
-                "-aes-ctr-192",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-aes-ctr-192"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-aes-192-ctr",
+    /*shortHelp=*/"Process the data with AES 192 bit CTR",
+    /*longHelp=*/"Process the data with AES 192 bit CTR. Also accepted as "
+                 "-aes-ctr-192",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{aes192CtrAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG aes256CtrFlag = {
-    .flag = "-aes-256-ctr",
-    .shortHelp = "Process the data with AES 256 bit CTR",
-    .longHelp = "Process the data with AES 256 bit CTR. Also accepted as "
-                "-aes-ctr-256",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-aes-ctr-256"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-aes-256-ctr",
+    /*shortHelp=*/"Process the data with AES 256 bit CTR",
+    /*longHelp=*/"Process the data with AES 256 bit CTR. Also accepted as "
+                 "-aes-ctr-256",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{aes256CtrAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 #endif /* AES CTR */
 
 /* 3DES is the one family whose canonical name puts the size last:
  * "3des-cbc-56" is the only spelling wolfCLU has ever documented. */
 #ifndef NO_DES3
+static const char* des3Cbc56AltNames[]  = { "-3des-56-cbc" };
+static const char* des3Cbc112AltNames[] = { "-3des-112-cbc" };
+static const char* des3Cbc168AltNames[] = { "-3des-168-cbc" };
+
 WOLFCLI_FLAG des3Cbc56Flag = {
-    .flag = "-3des-cbc-56",
-    .shortHelp = "Process the data with 3DES 56 bit CBC",
-    .longHelp = "Process the data with 3DES 56 bit CBC. Also accepted as "
-                "-3des-56-cbc",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-3des-56-cbc"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-3des-cbc-56",
+    /*shortHelp=*/"Process the data with 3DES 56 bit CBC",
+    /*longHelp=*/"Process the data with 3DES 56 bit CBC. Also accepted as "
+                 "-3des-56-cbc",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{des3Cbc56AltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG des3Cbc112Flag = {
-    .flag = "-3des-cbc-112",
-    .shortHelp = "Process the data with 3DES 112 bit CBC",
-    .longHelp = "Process the data with 3DES 112 bit CBC. Also accepted as "
-                "-3des-112-cbc",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-3des-112-cbc"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-3des-cbc-112",
+    /*shortHelp=*/"Process the data with 3DES 112 bit CBC",
+    /*longHelp=*/"Process the data with 3DES 112 bit CBC. Also accepted as "
+                 "-3des-112-cbc",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{des3Cbc112AltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG des3Cbc168Flag = {
-    .flag = "-3des-cbc-168",
-    .shortHelp = "Process the data with 3DES 168 bit CBC",
-    .longHelp = "Process the data with 3DES 168 bit CBC. Also accepted as "
-                "-3des-168-cbc",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-3des-168-cbc"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-3des-cbc-168",
+    /*shortHelp=*/"Process the data with 3DES 168 bit CBC",
+    /*longHelp=*/"Process the data with 3DES 168 bit CBC. Also accepted as "
+                 "-3des-168-cbc",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{des3Cbc168AltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 #endif /* !NO_DES3 */
 
 #ifdef HAVE_CAMELLIA
+static const char* camellia128CbcAltNames[] = { "-camellia-cbc-128" };
+static const char* camellia192CbcAltNames[] = { "-camellia-cbc-192" };
+static const char* camellia256CbcAltNames[] = { "-camellia-cbc-256" };
+
 WOLFCLI_FLAG camellia128CbcFlag = {
-    .flag = "-camellia-128-cbc",
-    .shortHelp = "Process the data with Camellia 128 bit CBC",
-    .longHelp = "Process the data with Camellia 128 bit CBC. Also accepted as "
-                "-camellia-cbc-128",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-camellia-cbc-128"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-camellia-128-cbc",
+    /*shortHelp=*/"Process the data with Camellia 128 bit CBC",
+    /*longHelp=*/"Process the data with Camellia 128 bit CBC. Also accepted "
+                 "as -camellia-cbc-128",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{camellia128CbcAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG camellia192CbcFlag = {
-    .flag = "-camellia-192-cbc",
-    .shortHelp = "Process the data with Camellia 192 bit CBC",
-    .longHelp = "Process the data with Camellia 192 bit CBC. Also accepted as "
-                "-camellia-cbc-192",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-camellia-cbc-192"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-camellia-192-cbc",
+    /*shortHelp=*/"Process the data with Camellia 192 bit CBC",
+    /*longHelp=*/"Process the data with Camellia 192 bit CBC. Also accepted "
+                 "as -camellia-cbc-192",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{camellia192CbcAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG camellia256CbcFlag = {
-    .flag = "-camellia-256-cbc",
-    .shortHelp = "Process the data with Camellia 256 bit CBC",
-    .longHelp = "Process the data with Camellia 256 bit CBC. Also accepted as "
-                "-camellia-cbc-256",
-    .value = &algFlagSeen,
-    .optionalArgs.altNames = {(const char*[]){"-camellia-cbc-256"}, 1},
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&algGroup}, 1},
+    /*flag=*/"-camellia-256-cbc",
+    /*shortHelp=*/"Process the data with Camellia 256 bit CBC",
+    /*longHelp=*/"Process the data with Camellia 256 bit CBC. Also accepted "
+                 "as -camellia-cbc-256",
+    /*value=*/&algFlagSeen,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{camellia256CbcAltNames, 1},
+        /*groups=*/{algGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 #endif /* HAVE_CAMELLIA */
 
@@ -206,13 +302,14 @@ static WOLFCLI_FLAG* algFlags[] = {
  * cipher, so the description points at the help menu rather than repeating
  * them. */
 static WOLFCLI_FLAG_GROUP algGroup = {
-    .name = "Cipher group",
-    .groupDescription = "Name the cipher with its own flag, for example "
+    /*name=*/"Cipher group",
+    /*groupDescription=*/"Name the cipher with its own flag, for example "
         "-aes-256-cbc. Run with -h for the ciphers this build has.",
-    .flags = algFlags,
-    .flagsSz = sizeof(algFlags) / sizeof(*algFlags),
-    .maxSet = 1,
-    .minSet = 1,
+    /*flags=*/algFlags,
+    /*flagsSz=*/sizeof(algFlags) / sizeof(*algFlags),
+    /*minSet=*/1,
+    /*maxSet=*/1,
+    /*priv=*/{0}
 };
 
 const char* wolfCLU_getAlgFlagName(void)

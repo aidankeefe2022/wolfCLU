@@ -40,110 +40,185 @@ static WOLFCLI_FLAG sha256Flag;
 static WOLFCLI_FLAG sha384Flag;
 static WOLFCLI_FLAG sha512Flag;
 
-static WOLFCLI_FLAG_GROUP hashGroup = {
-    .name = "Hash algoritm group",
-    .groupDescription = "Must pick one hash alg",
-    .flags = (WOLFCLI_FLAG *[]){
-        &md5Flag,
-        &blake2bFlag,
-        &shaFlag,
-        &sha256Flag,
-        &sha384Flag,
-        &sha512Flag,
-        &base64decFlag,
-        &base64encFlag
-    },
-    .flagsSz = 8,
-    .minSet = 1,
-    .maxSet = 1
+/* C89 has no compound literals, so the group membership arrays the flags and
+ * the group point at are named rather than written inline. */
+static WOLFCLI_FLAG* hashGroupFlags[] = {
+    &md5Flag,
+    &blake2bFlag,
+    &shaFlag,
+    &sha256Flag,
+    &sha384Flag,
+    &sha512Flag,
+    &base64decFlag,
+    &base64encFlag
 };
 
+static WOLFCLI_FLAG_GROUP hashGroup = {
+    /*name=*/"Hash algoritm group",
+    /*groupDescription=*/"Must pick one hash alg",
+    /*flags=*/hashGroupFlags,
+    /*flagsSz=*/sizeof(hashGroupFlags) / sizeof(*hashGroupFlags),
+    /*minSet=*/1,
+    /*maxSet=*/1,
+    /*priv=*/{0}
+};
+
+static WOLFCLI_FLAG_GROUP* hashGroupOnly[] = { &hashGroup };
+
+static const char* shaAltNames[] = { "-sha1" };
+
+/* The initializers below are positional, so their field order has to follow
+ * struct WOLFCLI_FLAG in wolfcli/cli.h. */
+
 static WOLFCLI_FLAG inFlag = {
-    .flag = "-in",
-    .shortHelp = "Input file to process defaults to stdin",
-    .longHelp = "Input file to process defaults to stdin",
-    .argHandler = wolfCLU_handleInFile,
-    .value = &bioIn,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
+    /*flag=*/"-in",
+    /*shortHelp=*/"Input file to process defaults to stdin",
+    /*longHelp=*/"Input file to process defaults to stdin",
+    /*value=*/&bioIn,
+    /*argHandler=*/wolfCLU_handleInFile,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG outFlag = {
-    .flag = "-out",
-    .shortHelp = "Output file to process defaults to stdout",
-    .longHelp = "Output file to process defaults to stdout",
-    .argHandler = wolfCLU_handleOutFile,
-    .value = &bioOut,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
+    /*flag=*/"-out",
+    /*shortHelp=*/"Output file to process defaults to stdout",
+    /*longHelp=*/"Output file to process defaults to stdout",
+    /*value=*/&bioOut,
+    /*argHandler=*/wolfCLU_handleOutFile,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG md5Flag = {
-    .flag = "-md5",
-    .shortHelp = "Use the md5 algoritm to hash message",
-    .longHelp = "Use the md5 algoritm to hash message",
-    .value = &hash_algs.hash_md5,
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*flag=*/"-md5",
+    /*shortHelp=*/"Use the md5 algoritm to hash message",
+    /*longHelp=*/"Use the md5 algoritm to hash message",
+    /*value=*/&hash_algs.hash_md5,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{hashGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
+/* -blake2b is the one alg flag that takes an argument, the digest size */
 static WOLFCLI_FLAG blake2bFlag = {
-    .flag = "-blake2b",
-    .shortHelp = "Use the blake2b algoritm to hash message",
-    .longHelp = "Use the blake2b algoritm to hash message",
-    .argHandler = wolfCLI_handleUInt,
-    .value = &hash_blake2b,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*flag=*/"-blake2b",
+    /*shortHelp=*/"Use the blake2b algoritm to hash message",
+    /*longHelp=*/"Use the blake2b algoritm to hash message",
+    /*value=*/&hash_blake2b,
+    /*argHandler=*/wolfCLI_handleUInt,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{hashGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG shaFlag = {
-    .flag = "-sha",
-    .shortHelp = "Use the sha1 algoritm to hash message",
-    .longHelp = "Use the sha1 algoritm to hash message",
-    .value = &hash_algs.hash_sha1,
-    .optionalArgs.altNames = {
-        .altNames = (const char *[]){"-sha1"},
-        .altNamesSz = 1,
+    /*flag=*/"-sha",
+    /*shortHelp=*/"Use the sha1 algoritm to hash message",
+    /*longHelp=*/"Use the sha1 algoritm to hash message",
+    /*value=*/&hash_algs.hash_sha1,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{shaAltNames, 1},
+        /*groups=*/{hashGroupOnly, 1}
     },
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG sha256Flag = {
-    .flag = "-sha256",
-    .shortHelp = "Use the sha256 algoritm to hash message",
-    .longHelp = "Use the sha256 algoritm to hash message",
-    .value = &hash_algs.hash_sha256,
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*flag=*/"-sha256",
+    /*shortHelp=*/"Use the sha256 algoritm to hash message",
+    /*longHelp=*/"Use the sha256 algoritm to hash message",
+    /*value=*/&hash_algs.hash_sha256,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{hashGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG sha384Flag = {
-    .flag = "-sha384",
-    .shortHelp = "Use the sha384 algoritm to hash message",
-    .longHelp = "Use the sha384 algoritm to hash message",
-    .value = &hash_algs.hash_sha384,
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*flag=*/"-sha384",
+    /*shortHelp=*/"Use the sha384 algoritm to hash message",
+    /*longHelp=*/"Use the sha384 algoritm to hash message",
+    /*value=*/&hash_algs.hash_sha384,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{hashGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG sha512Flag = {
-    .flag = "-sha512",
-    .shortHelp = "Use the sha512 algoritm to hash message",
-    .longHelp = "Use the sha512 algoritm to hash message",
-    .value = &hash_algs.hash_sha512,
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*flag=*/"-sha512",
+    /*shortHelp=*/"Use the sha512 algoritm to hash message",
+    /*longHelp=*/"Use the sha512 algoritm to hash message",
+    /*value=*/&hash_algs.hash_sha512,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{hashGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG base64encFlag = {
-    .flag = "-base64enc",
-    .shortHelp = "Base 64 encode message",
-    .longHelp = "Base 64 encode message",
-    .value = &hash_algs.hash_base64enc,
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*flag=*/"-base64enc",
+    /*shortHelp=*/"Base 64 encode message",
+    /*longHelp=*/"Base 64 encode message",
+    /*value=*/&hash_algs.hash_base64enc,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{hashGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG base64decFlag = {
-    .flag = "-base64dec",
-    .shortHelp = "Base 64 decode message",
-    .longHelp = "Base 64 decode message",
-    .value = &hash_algs.hash_base64dec,
-    .optionalArgs.groups = {(WOLFCLI_FLAG_GROUP *[]){&hashGroup}, 1},
+    /*flag=*/"-base64dec",
+    /*shortHelp=*/"Base 64 decode message",
+    /*longHelp=*/"Base 64 decode message",
+    /*value=*/&hash_algs.hash_base64dec,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{hashGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 WOLFCLI_FLAG* flags[] = {
@@ -215,15 +290,18 @@ static int hashEntry(void)
 }
 
 WOLFCLI_COMMAND hashCommand = {
-    .name = "hash",
-    .shortHelp = "Create a hash of a message.",
-    .longHelp  = (
+    /*name=*/"hash",
+    /*shortHelp=*/"Create a hash of a message.",
+    /*longHelp=*/
 "Create a hash of a message.\n"
-"   Usage: wolfssl hash -in <file> -out <file> [algoritm]\n"),
-    .flags = {
-        .flags = flags,
-        .flagsSz = sizeof(flags) / sizeof(*flags),
+"   Usage: wolfssl hash -in <file> -out <file> [algoritm]\n",
+    /*commandEntry=*/hashEntry,
+    /*commandCleanup=*/cleanup,
+    /*flags=*/{
+        /*flags=*/flags,
+        /*flagsSz=*/sizeof(flags) / sizeof(*flags)
     },
-    .commandEntry = hashEntry,
-    .commandCleanup = cleanup
+    /*commands=*/{0},
+    /*altNames=*/{0},
+    /*priv=*/{0}
 };

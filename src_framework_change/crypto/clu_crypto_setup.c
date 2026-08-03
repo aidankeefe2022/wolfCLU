@@ -57,172 +57,224 @@ static WOLFCLI_FLAG passwordFlag;
 static WOLFCLI_FLAG saltFlag;
 static WOLFCLI_FLAG base64Flag;
 
+/* C89 has no compound literals, so the membership arrays the groups and the
+ * flags point at are named here rather than written inline. */
+static WOLFCLI_FLAG* passwordGroupFlags[] = {
+    &pwdFlag, &keyFileFlag, &keyFlag, &passwordFlag
+};
+
+static WOLFCLI_FLAG* ivSaltGroupFlags[] = { &ivFlag, &saltFlag };
+
 static WOLFCLI_FLAG_GROUP passwordMutualExclusionGroup = {
-    .name = "Password/Key group",
-    .groupDescription = "Must set one of these flags",
-    .flags = (WOLFCLI_FLAG *[]){&pwdFlag, &keyFileFlag, &keyFlag, &passwordFlag},
-    .flagsSz = 4,
-    .maxSet = 1,
-    .minSet = 1,
+    /*name=*/"Password/Key group",
+    /*groupDescription=*/"Must set one of these flags",
+    /*flags=*/passwordGroupFlags,
+    /*flagsSz=*/sizeof(passwordGroupFlags) / sizeof(*passwordGroupFlags),
+    /*minSet=*/1,
+    /*maxSet=*/1,
+    /*priv=*/{0}
 };
 
-static WOLFCLI_FLAG_GROUP ivSaltMutex= {
-    .name = "Iv/NoSalt group",
-    .groupDescription = "Can only set one of these flags",
-    .flags = (WOLFCLI_FLAG *[]){&ivFlag, &saltFlag},
-    .flagsSz = 2,
-    .maxSet = 1,
-    .minSet = 0,
+static WOLFCLI_FLAG_GROUP ivSaltMutex = {
+    /*name=*/"Iv/NoSalt group",
+    /*groupDescription=*/"Can only set one of these flags",
+    /*flags=*/ivSaltGroupFlags,
+    /*flagsSz=*/sizeof(ivSaltGroupFlags) / sizeof(*ivSaltGroupFlags),
+    /*minSet=*/0,
+    /*maxSet=*/1,
+    /*priv=*/{0}
 };
 
-static int handlePasswordArg(const char* arg, void* out);
-
-static WOLFCLI_FLAG kdfVersionFlag= {
-    .flag = "-pbkdf2",
-    .shortHelp = "Use kdf version 2",
-    .longHelp = "Use kdf version 2",
-    .value    = &isPkbVerion2
+static WOLFCLI_FLAG_GROUP* passwordGroupOnly[] = {
+    &passwordMutualExclusionGroup
 };
+static WOLFCLI_FLAG_GROUP* ivSaltGroupOnly[] = { &ivSaltMutex };
+static WOLFCLI_FLAG* ivFlagOnly[] = { &ivFlag };
 
-static WOLFCLI_FLAG base64Flag = {
-    .flag = "-base64",
-    .shortHelp = "Decode base64 input before enc/dec",
-    .longHelp = "Decode base64 input before enc/dec",
-    .value    = &isBase64
-};
+static const char* pwdAltNames[] = { "-k" };
+static const char* keyAltNames[] = { "--key" };
+static const char* ivAltNames[]  = { "--iv" };
 
-static WOLFCLI_FLAG saltFlag = {
-    .flag = "-nosalt",
-    .shortHelp = "Do not salt the hash",
-    .longHelp = "Do not salt the hash",
-    .value    = &noSalt,
-    .optionalArgs.groups = {
-        .groups = (WOLFCLI_FLAG_GROUP *[]){&ivSaltMutex},
-        .groupsSz = 1
-    }
-};
-
-static WOLFCLI_FLAG passwordFlag = {
-    .flag = "-pass",
-    .shortHelp = "password input [stdin|pass:<password>]",
-    .longHelp = "password input: [stdin|pass:<password>]",
-    .argHandler = handlePasswordArg,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
-    .optionalArgs.groups = {
-        .groups = (WOLFCLI_FLAG_GROUP *[]){&passwordMutualExclusionGroup},
-        .groupsSz = 1
-    },
-};
-
-static WOLFCLI_FLAG pwdFlag = {
-    .flag = "-pwd",
-    .shortHelp = "password input",
-    .longHelp = "password input",
-    .argHandler = wolfCLU_handleCopyString,
-    .value = &passwordCopyArg,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
-    .optionalArgs.altNames =
-    {
-        .altNames = (const char*[]){"-k"},
-        .altNamesSz = 1,
-    },
-    .optionalArgs.groups = {
-        .groups = (WOLFCLI_FLAG_GROUP *[]){&passwordMutualExclusionGroup},
-        .groupsSz = 1
-    },
-};
-
-static WOLFCLI_FLAG keyFileFlag = {
-    .flag = "-inkey",
-    .shortHelp = "File with hex key",
-    .longHelp = "File with hex key",
-    .value = &keyFileName,
-    .argHandler = wolfCLI_handleString,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
-    .optionalArgs.groups = {
-        .groups = (WOLFCLI_FLAG_GROUP *[]){&passwordMutualExclusionGroup},
-        .groupsSz = 1
-    },
-    .optionalArgs.dependsOn = {
-        .flags = (WOLFCLI_FLAG *[]){&ivFlag},
-        .flagsSz = 1,
-    }
-};
-
-
-static WOLFCLI_FLAG keyFlag = {
-    .flag = "-key",
-    .shortHelp = "hex key input",
-    .longHelp =
+static const char keyLongHelp[] =
 "hex key input: \n\
     -inkey -> <file with key> \n\
-",
-    .value = &keyString,
-    .argHandler = wolfCLU_handleCopyString,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
-    .optionalArgs.groups = {
-        .groups = (WOLFCLI_FLAG_GROUP *[]){&passwordMutualExclusionGroup},
-        .groupsSz = 1
-    },
-    .optionalArgs.dependsOn = {
-        .flags = (WOLFCLI_FLAG *[]){&ivFlag},
-        .flagsSz = 1,
-    },
-    .optionalArgs.altNames = {
-        (const char*[]){"--key"},
-        1,
-    }
-};
+";
 
-static WOLFCLI_FLAG ivFlag = {
-    .flag = "-iv",
-    .shortHelp = "hex iv input",
-    .longHelp = "hex iv input",
-    .value = &ivString,
-    .argHandler = wolfCLU_handleCopyString,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
-    .optionalArgs.groups = {
-        .groups = (WOLFCLI_FLAG_GROUP *[]){&ivSaltMutex},
-        .groupsSz = 1
-    },
-    .optionalArgs.altNames = {
-        (const char*[]){"--iv"},
-        1,
-    }
-};
-
-static WOLFCLI_FLAG hashFlag = {
-    .flag = "-hash",
-    .shortHelp = "Hash alg for creating digest of message",
-    .longHelp =
+static const char hashLongHelp[] =
 "Hash alg for creating digest of message \n\
     Algs: \n\
         ├─ sha \n\
         ├─ sha224 \n\
         ├─ sha265 \n\
         ├─ sha384 \n\
-        └─ sha512",
-    .value = &hashType,
-    .argHandler = wolfCLU_handleGetHash,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
+        └─ sha512";
+
+static int handlePasswordArg(const char* arg, void* out);
+
+static WOLFCLI_FLAG kdfVersionFlag = {
+    /*flag=*/"-pbkdf2",
+    /*shortHelp=*/"Use kdf version 2",
+    /*longHelp=*/"Use kdf version 2",
+    /*value=*/&isPkbVerion2,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+static WOLFCLI_FLAG base64Flag = {
+    /*flag=*/"-base64",
+    /*shortHelp=*/"Decode base64 input before enc/dec",
+    /*longHelp=*/"Decode base64 input before enc/dec",
+    /*value=*/&isBase64,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+static WOLFCLI_FLAG saltFlag = {
+    /*flag=*/"-nosalt",
+    /*shortHelp=*/"Do not salt the hash",
+    /*longHelp=*/"Do not salt the hash",
+    /*value=*/&noSalt,
+    /*argHandler=*/NULL,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/0,
+        /*altNames=*/{0},
+        /*groups=*/{ivSaltGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+static WOLFCLI_FLAG passwordFlag = {
+    /*flag=*/"-pass",
+    /*shortHelp=*/"password input [stdin|pass:<password>]",
+    /*longHelp=*/"password input: [stdin|pass:<password>]",
+    /*value=*/NULL,
+    /*argHandler=*/handlePasswordArg,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{passwordGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+static WOLFCLI_FLAG pwdFlag = {
+    /*flag=*/"-pwd",
+    /*shortHelp=*/"password input",
+    /*longHelp=*/"password input",
+    /*value=*/&passwordCopyArg,
+    /*argHandler=*/wolfCLU_handleCopyString,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{pwdAltNames, 1},
+        /*groups=*/{passwordGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+static WOLFCLI_FLAG keyFileFlag = {
+    /*flag=*/"-inkey",
+    /*shortHelp=*/"File with hex key",
+    /*longHelp=*/"File with hex key",
+    /*value=*/&keyFileName,
+    /*argHandler=*/wolfCLI_handleString,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{ivFlagOnly, 1},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{passwordGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+
+static WOLFCLI_FLAG keyFlag = {
+    /*flag=*/"-key",
+    /*shortHelp=*/"hex key input",
+    /*longHelp=*/keyLongHelp,
+    /*value=*/&keyString,
+    /*argHandler=*/wolfCLU_handleCopyString,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{ivFlagOnly, 1},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{keyAltNames, 1},
+        /*groups=*/{passwordGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+static WOLFCLI_FLAG ivFlag = {
+    /*flag=*/"-iv",
+    /*shortHelp=*/"hex iv input",
+    /*longHelp=*/"hex iv input",
+    /*value=*/&ivString,
+    /*argHandler=*/wolfCLU_handleCopyString,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{ivAltNames, 1},
+        /*groups=*/{ivSaltGroupOnly, 1}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
+};
+
+static WOLFCLI_FLAG hashFlag = {
+    /*flag=*/"-hash",
+    /*shortHelp=*/"Hash alg for creating digest of message",
+    /*longHelp=*/hashLongHelp,
+    /*value=*/&hashType,
+    /*argHandler=*/wolfCLU_handleGetHash,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG inFlag = {
-    .flag = "-in",
-    .shortHelp = "Input File to process",
-    .longHelp = "Input File to process",
-    .argHandler = wolfCLI_handleString,
-    .value = &inFile,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
+    /*flag=*/"-in",
+    /*shortHelp=*/"Input File to process",
+    /*longHelp=*/"Input File to process",
+    /*value=*/&inFile,
+    /*argHandler=*/wolfCLI_handleString,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static WOLFCLI_FLAG outFlag = {
-    .flag = "-out",
-    .shortHelp = "Input File to process",
-    .longHelp = "Input File to process",
-    .argHandler = wolfCLI_handleString,
-    .value = &outFile,
-    .optionalArgs.modes = WOLFCLI_FLAG_HAS_ARG,
+    /*flag=*/"-out",
+    /*shortHelp=*/"Input File to process",
+    /*longHelp=*/"Input File to process",
+    /*value=*/&outFile,
+    /*argHandler=*/wolfCLI_handleString,
+    /*optionalArgs=*/{
+        /*dependsOn=*/{0},
+        /*modes=*/WOLFCLI_FLAG_HAS_ARG,
+        /*altNames=*/{0},
+        /*groups=*/{0}
+    },
+    /*found=*/WOLFCLI_FLAG_NOT_FOUND
 };
 
 static int handlePasswordArg(const char* arg, void* out)
@@ -422,12 +474,16 @@ static int commonEntry(char isEncrypt)
     int ret = WOLFCLU_FATAL_ERROR;
     const WOLFSSL_EVP_CIPHER* cphr = NULL;
     int keyType = WOLFCLU_KEYTYPE_NONE;
+    char inNameBuf[256];
 
 
     int alg;
     char* mode;
     int keySize;
     int block;
+    /* wolfCLU_getAlgo() reads the name out of an argv style array, so build one
+     * whose third entry is the cipher flag's name */
+    char* algArgv[3];
     const char* algName = wolfCLU_getAlgFlagName();
 
     if (algName == NULL) {
@@ -435,9 +491,12 @@ static int commonEntry(char isEncrypt)
         return WOLFCLU_FATAL_ERROR;
     }
 
+    algArgv[0] = (char*)"";
+    algArgv[1] = (char*)"";
+    algArgv[2] = (char*)algName;
+
     /* gets blocksize, algorithm, mode, and key size from name argument */
-    block = wolfCLU_getAlgo(3, (char *[]){(char*)"", (char*)"", (char*)algName},
-            &alg, &mode, &keySize);
+    block = wolfCLU_getAlgo(3, algArgv, &alg, &mode, &keySize);
     if (block < 0) {
         wolfCLU_LogError("unable to find algorithm to use");
         return WOLFCLU_FATAL_ERROR;
@@ -592,9 +651,19 @@ static int commonEntry(char isEncrypt)
         keyType = WOLFCLU_KEYTYPE_PASSWORD;
     }
 
+    if (inFile == NULL) {
+        ret = wolfCLU_readFilename(inNameBuf, sizeof(inNameBuf),
+                "Please enter a name for the input file: ");
+        if (ret != WOLFCLU_SUCCESS) {
+            XFREE(mode, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+            return WOLFCLU_FATAL_ERROR;
+        }
+        inFile = inNameBuf;
+    }
+
     if (cphr != NULL) {
         if (mode == NULL) {
-            wolfCLU_LogError("mdoe was null");
+            wolfCLU_LogError("mode was null");
         }
         /* keySz is the algorithm's key length in bytes (keySize is in bits),
          * and the PBKDF version must match what -encrypt used: version 1
@@ -608,11 +677,7 @@ static int commonEntry(char isEncrypt)
                 isBase64, noSalt, keyType);
     }
     else {
-        /* backing store for an output file name read from stdin when -out is omitted */
         char outNameBuf[256];
-        /* The legacy (non-EVP) path writes straight to a file rather than
-         * defaulting to stdout, so an output name is mandatory. Prompt for
-         * one when -out was omitted, matching wolfCLU_setup's behavior. */
         if (outFile == NULL) {
             ret = wolfCLU_readFilename(outNameBuf, sizeof(outNameBuf),
                     "Please enter a name for the output file: ");
@@ -623,10 +688,17 @@ static int commonEntry(char isEncrypt)
             outFile = outNameBuf;
         }
         if (isEncrypt) {
+            /* wolfCLU_encrypt's trailing params are (ivCheck, inputHex), not
+             * (keyType, ...). ivCheck == 0 is what makes it generate a random
+             * IV and stretch the password into the key, mirroring the
+             * keyType == WOLFCLU_KEYTYPE_PASSWORD branch of wolfCLU_decrypt;
+             * passing a non-zero keyType there skipped derivation entirely and
+             * encrypted with an all-zero key/IV. No flag feeds hex input on
+             * this path, so inputHex is always 0. */
             ret = wolfCLU_encrypt(alg, mode, (byte*)passwordArg.password,
                     (byte*)keyBuf, keySize, inFile, outFile,
-                    (byte*)ivBuf, block, keyType, ivFlag.found ||
-                    keyFlag.found);
+                    (byte*)ivBuf, block,
+                    keyType == WOLFCLU_KEYTYPE_USER, 0);
         }
         else {
             ret = wolfCLU_decrypt(alg, mode, (byte*)passwordArg.password,
@@ -650,10 +722,7 @@ static int decryptEntry(void)
 
 WOLFCLI_COMMAND decryptCommand;
 
-WOLFCLI_COMMAND encryptCommand = {
-    .name = "encrypt",
-    .shortHelp = "Encrypt input file with provided algorithm",
-    .longHelp =(
+static const char encryptLongHelp[] =
 "Encrypts a file using a cipher and a password or key. The algorithm must\n\
 match the one used for encryption. For AES and 3DES (EVP path),\n\
 password-based decryption extracts the salt from the file and derives key\n\
@@ -662,26 +731,9 @@ Camellia), salt and IV are read from the file header.\n\
 \n\
 Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
 list below carries every cipher this build has, each with the older\n\
-size-last spelling it also answers to."),
-    .commandEntry = encryptEntry,
-    .flags =  {
-        .flags = decryptFlags,
-        .flagsSz = sizeof(decryptFlags) / sizeof(*decryptFlags),
-    },
-    .altNames = {
-        .altNames = (const char*[]){"enc","-enc", "-encrypt"},
-        .altNamesSz = 3,
-    },
-    .commands = {
-        (WOLFCLI_COMMAND *[]){&decryptCommand},
-        1
-    }
-};
+size-last spelling it also answers to.";
 
-WOLFCLI_COMMAND decryptCommand = {
-    .name = "decrypt",
-    .shortHelp = "Decrypt input file with provided algorithm",
-    .longHelp =(
+static const char decryptLongHelp[] =
 "Decrypts a file using a cipher and a password or key. The algorithm must\n\
 match the one used for encryption. For AES and 3DES (EVP path),\n\
 password-based decryption extracts the salt from the file and derives key\n\
@@ -691,14 +743,48 @@ and IVs, you must provide the same values used during encryption.\n\
 \n\
 Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
 list below carries every cipher this build has, each with the older\n\
-size-last spelling it also answers to."),
-    .commandEntry = decryptEntry,
-    .flags =  {
-        .flags = decryptFlags,
-        .flagsSz = sizeof(decryptFlags) / sizeof(*decryptFlags),
+size-last spelling it also answers to.";
+
+static const char* encryptAltNames[] = { "enc", "-enc", "-encrypt" };
+static const char* decryptAltNames[] = { "dec", "-dec", "-d", "-decrypt" };
+
+static WOLFCLI_COMMAND* encryptSubCommands[] = { &decryptCommand };
+
+WOLFCLI_COMMAND encryptCommand = {
+    /*name=*/"encrypt",
+    /*shortHelp=*/"Encrypt input file with provided algorithm",
+    /*longHelp=*/encryptLongHelp,
+    /*commandEntry=*/encryptEntry,
+    /*commandCleanup=*/NULL,
+    /*flags=*/{
+        /*flags=*/decryptFlags,
+        /*flagsSz=*/sizeof(decryptFlags) / sizeof(*decryptFlags)
     },
-    .altNames = {
-        .altNames = (const char*[]){"dec","-dec", "-d", "-decrypt"},
-        .altNamesSz = 4,
-    }
+    /*commands=*/{
+        /*commands=*/encryptSubCommands,
+        /*commandsSz=*/sizeof(encryptSubCommands) / sizeof(*encryptSubCommands)
+    },
+    /*altNames=*/{
+        /*altNames=*/encryptAltNames,
+        /*altNamesSz=*/sizeof(encryptAltNames) / sizeof(*encryptAltNames)
+    },
+    /*priv=*/{0}
+};
+
+WOLFCLI_COMMAND decryptCommand = {
+    /*name=*/"decrypt",
+    /*shortHelp=*/"Decrypt input file with provided algorithm",
+    /*longHelp=*/decryptLongHelp,
+    /*commandEntry=*/decryptEntry,
+    /*commandCleanup=*/NULL,
+    /*flags=*/{
+        /*flags=*/decryptFlags,
+        /*flagsSz=*/sizeof(decryptFlags) / sizeof(*decryptFlags)
+    },
+    /*commands=*/{0},
+    /*altNames=*/{
+        /*altNames=*/decryptAltNames,
+        /*altNamesSz=*/sizeof(decryptAltNames) / sizeof(*decryptAltNames)
+    },
+    /*priv=*/{0}
 };
