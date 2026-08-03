@@ -30,18 +30,17 @@ extern "C" {
 #include <stdio.h>
 
 #ifdef _WIN32 /* running on windows */
-#include <winsock2.h>
-#include <windows.h>
-#include <corecrt_io.h>
-#include <sys/timeb.h>
-
+    #include <winsock2.h>
+    #include <windows.h>
+    #include <sys/timeb.h>
+    #include <io.h>
 #else
-#include <unistd.h>
-#include <sys/time.h>
-#ifndef FREERTOS
-#include <termios.h>
-#endif
-#endif
+    #include <unistd.h>
+    #include <sys/time.h>
+    #ifndef FREERTOS
+        #include <termios.h>
+    #endif
+#endif /* _WIN32 */
 
 #undef CRL_REASON_UNSPECIFIED
 #undef CRL_REASON_KEY_COMPROMISE
@@ -177,7 +176,9 @@ struct option
 
 #define int64_t long long
 #define access _access
+#ifndef F_OK
 #define F_OK 00
+#endif
 #define strtok_r strtok_s
 
 extern char* optarg;
