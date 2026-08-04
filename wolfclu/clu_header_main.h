@@ -873,6 +873,11 @@ int wolfCLU_LoadKeyDer(const char* filename, byte** der, word32* derSz);
  */
 int wolfCLU_ReadCertDer(const char* filename, byte** outDer);
 
+int wolfCLU_loadHexKeyInto(byte *keyOut, int keyBytes, const char *hex,
+                                  word32 hexLen);
+
+int wolfCLU_loadHexIvInto(byte *ivOut, int block, const char *hex,
+                                 word32 hexLen);
 
 /**
  * @brief function to prompt user for password from stdin

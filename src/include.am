@@ -12,7 +12,7 @@ wolfssl_SOURCES = src_framework_change/clu_main.c \
                     src_framework_change/rand/clu_rand_setup.c \
                     src_framework_change/crypto/clu_crypto_setup.c \
                     src_framework_change/crypto/clu_crypto_flags.c \
-                    src/crypto/clu_crypto_setup.c \
+                    src_framework_change/crypto/clu_crypto.c \
                     src/crypto/clu_encrypt.c \
                     src/crypto/clu_decrypt.c \
                     src/crypto/clu_evp_crypto.c \

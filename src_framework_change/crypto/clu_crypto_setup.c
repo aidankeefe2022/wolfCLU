@@ -321,110 +321,6 @@ static WOLFCLI_FLAG *decryptFlags[] = {
 #endif
 };
 
-/* Decode a hex key string into the caller-provided keyOut buffer.
- *
- * Wraps wolfCLU_hexToBin so the caller's pre-allocated key buffer is not
- * replaced by hexToBin's internal allocation (which would leak the original
- * and, on hexToBin failure, leave the caller pointing at a freed buffer).
- *
- * Returns WOLFCLU_SUCCESS on success, WOLFCLU_FATAL_ERROR on length mismatch
- * or hex decode failure, MEMORY_E on allocation failure. */
-static int wolfCLU_loadHexKeyInto(byte *keyOut, int keyBytes, const char *hex,
-                                  word32 hexLen)
-{
-    byte *tmp = NULL;
-    word32 tmpSz = 0;
-    char *hexCopy;
-    int ret;
-
-    if (hexLen != (word32)keyBytes * 2) {
-        WOLFCLU_LOG(WOLFCLU_L0, "Length of key provided was: %u.",
-                    (unsigned int)(hexLen * 4));
-        WOLFCLU_LOG(WOLFCLU_L0, "Length of key expected was: %d.",
-                    keyBytes * 8);
-        WOLFCLU_LOG(WOLFCLU_E0, "Invalid Key. Must match algorithm key size.");
-        return WOLFCLU_FATAL_ERROR;
-    }
-
-    hexCopy = (char *)XMALLOC(hexLen + 1, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (hexCopy == NULL) {
-        return MEMORY_E;
-    }
-    XMEMCPY(hexCopy, hex, hexLen);
-    hexCopy[hexLen] = '\0';
-
-    ret = wolfCLU_hexToBin(hexCopy, &tmp, &tmpSz, NULL, NULL, NULL, NULL, NULL,
-                           NULL, NULL, NULL, NULL);
-    wolfCLU_ForceZero(hexCopy, hexLen);
-    XFREE(hexCopy, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-
-    if (ret != WOLFCLU_SUCCESS) {
-        WOLFCLU_LOG(WOLFCLU_E0, "failed during conversion of Key, ret = %d",
-                    ret);
-        /* On failure wolfCLU_hexToBin frees its own internal buffer; do not
-         * touch tmp here. Propagate MEMORY_E unchanged so callers (and the
-         * documented contract above) can distinguish allocation failure
-         * from a generic decode error. */
-        return (ret == MEMORY_E) ? MEMORY_E : WOLFCLU_FATAL_ERROR;
-    }
-
-    XMEMCPY(keyOut, tmp, keyBytes);
-    wolfCLU_ForceZero(tmp, tmpSz);
-    /* tmp was allocated by wolfCLU_hexToBin with a NULL heap hint
-     * (see src/tools/clu_hex_to_bin.c); free it with the same hint. */
-    XFREE(tmp, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    return WOLFCLU_SUCCESS;
-}
-
-/* Decode a hex IV string into the caller-provided ivOut buffer.
- *
- * Like wolfCLU_loadHexKeyInto, the hex text is copied out before decoding, so
- * `hex` may alias `ivOut` (the -iv handler leaves the hex text sitting in the
- * same buffer the decoded IV has to end up in).
- *
- * Returns WOLFCLU_SUCCESS on success, WOLFCLU_FATAL_ERROR on a block-length
- * mismatch or hex decode failure, MEMORY_E on allocation failure. */
-static int wolfCLU_loadHexIvInto(byte *ivOut, int block, const char *hex,
-                                 word32 hexLen)
-{
-    byte *tmp = NULL;
-    word32 tmpSz = 0;
-    char *hexCopy;
-    int ret;
-
-    hexCopy = (char *)XMALLOC(hexLen + 1, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (hexCopy == NULL) {
-        return MEMORY_E;
-    }
-    XMEMCPY(hexCopy, hex, hexLen);
-    hexCopy[hexLen] = '\0';
-
-    ret = wolfCLU_hexToBin(hexCopy, &tmp, &tmpSz, NULL, NULL, NULL, NULL, NULL,
-                           NULL, NULL, NULL, NULL);
-    wolfCLU_ForceZero(hexCopy, hexLen);
-    XFREE(hexCopy, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-
-    if (ret != WOLFCLU_SUCCESS) {
-        WOLFCLU_LOG(WOLFCLU_E0, "failed during conversion of IV, ret = %d",
-                    ret);
-        /* wolfCLU_hexToBin frees its own buffer on failure; tmp is not ours. */
-        return (ret == MEMORY_E) ? MEMORY_E : WOLFCLU_FATAL_ERROR;
-    }
-
-    if ((int)tmpSz != block) {
-        WOLFCLU_LOG(WOLFCLU_E0, "IV length mismatch: expected %d bytes, got %u",
-                    block, (unsigned int)tmpSz);
-        wolfCLU_ForceZero(tmp, tmpSz);
-        XFREE(tmp, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        return WOLFCLU_FATAL_ERROR;
-    }
-
-    XMEMCPY(ivOut, tmp, tmpSz);
-    wolfCLU_ForceZero(tmp, tmpSz);
-    /* Allocated by wolfCLU_hexToBin with a NULL heap hint; match it. */
-    XFREE(tmp, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    return WOLFCLU_SUCCESS;
-}
 
 /* Prompt for a filename on stdin with validation.
  * Returns WOLFCLU_SUCCESS on success, WOLFCLU_FATAL_ERROR on EOF/read error.
@@ -725,30 +621,6 @@ static int decryptEntry(void)
 }
 
 WOLFCLI_COMMAND decryptCommand;
-
-static const char encryptLongHelp[] =
-    "Encrypts a file using a cipher and a password or key. The algorithm must\n\
-match the one used for encryption. For AES and 3DES (EVP path),\n\
-password-based decryption extracts the salt from the file and derives key\n\
-and IV from the password and salt. For legacy non-EVP ciphers (e.g.\n\
-Camellia), salt and IV are read from the file header.\n\
-\n\
-Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
-list below carries every cipher this build has, each with the older\n\
-size-last spelling it also answers to.";
-
-static const char decryptLongHelp[] =
-    "Decrypts a file using a cipher and a password or key. The algorithm must\n\
-match the one used for encryption. For AES and 3DES (EVP path),\n\
-password-based decryption extracts the salt from the file and derives key\n\
-and IV from the password and salt. For legacy non-EVP ciphers (e.g.\n\
-Camellia), salt and IV are read from the file header. For explicit keys\n\
-and IVs, you must provide the same values used during encryption.\n\
-\n\
-Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
-list below carries every cipher this build has, each with the older\n\
-size-last spelling it also answers to.";
-
 static const char *encryptAltNames[] = { "enc", "-enc", "-encrypt" };
 static const char *decryptAltNames[] = { "dec", "-dec", "-d", "-decrypt" };
 
@@ -757,7 +629,17 @@ static WOLFCLI_COMMAND *encryptSubCommands[] = { &decryptCommand };
 WOLFCLI_COMMAND encryptCommand = {
     /*name=*/"encrypt",
     /*shortHelp=*/"Encrypt input file with provided algorithm",
-    /*longHelp=*/encryptLongHelp,
+    /*longHelp=*/
+"Encrypts a file using a cipher and a password or key. The algorithm must\n\
+match the one used for encryption. For AES and 3DES (EVP path),\n\
+password-based decryption extracts the salt from the file and derives key\n\
+and IV from the password and salt. For legacy non-EVP ciphers (e.g.\n\
+Camellia), salt and IV are read from the file header.\n\
+\n\
+Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
+list below carries every cipher this build has, each with the older\n\
+size-last spelling it also answers to."
+,
     /*commandEntry=*/encryptEntry,
     /*commandCleanup=*/NULL,
     /*flags=*/
@@ -775,7 +657,18 @@ WOLFCLI_COMMAND encryptCommand = {
 WOLFCLI_COMMAND decryptCommand = {
     /*name=*/"decrypt",
     /*shortHelp=*/"Decrypt input file with provided algorithm",
-    /*longHelp=*/decryptLongHelp,
+    /*longHelp=*/
+"Decrypts a file using a cipher and a password or key. The algorithm must\n\
+match the one used for encryption. For AES and 3DES (EVP path),\n\
+password-based decryption extracts the salt from the file and derives key\n\
+and IV from the password and salt. For legacy non-EVP ciphers (e.g.\n\
+Camellia), salt and IV are read from the file header. For explicit keys\n\
+and IVs, you must provide the same values used during encryption.\n\
+\n\
+Name the cipher with a flag of its own, for example -aes-256-cbc. The flag\n\
+list below carries every cipher this build has, each with the older\n\
+size-last spelling it also answers to."
+,
     /*commandEntry=*/decryptEntry,
     /*commandCleanup=*/NULL,
     /*flags=*/
