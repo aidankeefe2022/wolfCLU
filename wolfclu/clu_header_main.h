@@ -879,7 +879,11 @@ int wolfCLU_ReadCertDer(const char* filename, byte** outDer);
  */
 int wolfCLU_GetStdinPassword(byte* password, word32* passwordSz);
 
+int wolfCLU_WriteBase64(WOLFSSL_BIO* outBio, byte* data, int size);
+int wolfCLU_WriteHex(WOLFSSL_BIO* outBio, byte* data, int size);
+
 extern WOLFCLI_COMMAND bench;
+extern WOLFCLI_COMMAND randCommand;
 extern WOLFCLI_COMMAND dhCommand;
 extern WOLFCLI_COMMAND dsaCommand;
 extern WOLFCLI_COMMAND hashCommand;

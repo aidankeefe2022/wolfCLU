@@ -1031,7 +1031,7 @@ class EncStdinPasswordTest(unittest.TestCase):
         self._write_plaintext(plain)
 
         code, out = self._encrypt_with_pty_password(
-            self.PASSWORD, "aes-cbc-256", "-pbkdf2", "-p",
+            self.PASSWORD, "-aes-cbc-256", "-pbkdf2", "-p",
             "-in", plain, "-out", cipher)
         self.assertEqual(code, 0, "encrypt failed: " + out)
 
@@ -1052,12 +1052,12 @@ class EncStdinPasswordTest(unittest.TestCase):
         self._write_plaintext(plain)
 
         code, out = self._encrypt_with_pty_password(
-            self.PASSWORD, "aes-cbc-256", "-pbkdf2",
+            self.PASSWORD, "-aes-cbc-256", "-pbkdf2",
             "-in", plain, "-out", cipher)
         self.assertEqual(code, 0, "encrypt failed: " + out)
 
         r = subprocess.run(
-            [WOLFSSL_BIN, "decrypt", "aes-cbc-256", "-pbkdf2",
+            [WOLFSSL_BIN, "decrypt", "-aes-cbc-256", "-pbkdf2",
              "-pass", "pass:" + self.PASSWORD, "-in", cipher, "-out", dec],
             capture_output=True, text=True, stdin=subprocess.DEVNULL,
             timeout=60)
@@ -1079,11 +1079,11 @@ class EncStdinPasswordTest(unittest.TestCase):
         self._write_plaintext(plain)
 
         code, out = self._encrypt_with_pty_password(
-            self.PASSWORD, "aes-cbc-256", "-in", plain, "-out", cipher)
+            self.PASSWORD, "-aes-cbc-256", "-in", plain, "-out", cipher)
         self.assertEqual(code, 0, "encrypt failed: " + out)
 
         r = subprocess.run(
-            [WOLFSSL_BIN, "decrypt", "aes-cbc-256",
+            [WOLFSSL_BIN, "decrypt", "-aes-cbc-256",
              "-pass", "pass:" + self.PASSWORD, "-in", cipher, "-out", dec],
             capture_output=True, text=True, stdin=subprocess.DEVNULL,
             timeout=60)
