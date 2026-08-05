@@ -929,7 +929,6 @@ int wolfCLU_sign_data_xmss(byte* data, char* out, int fSz, char* privKey)
 #endif
 
     /* init the XMSS key */
-    XMEMSET(key, 0, sizeof(XmssKey));
     ret = wc_XmssKey_Init(key, HEAP_HINT, 0);
     if (ret != 0) {
         wolfCLU_LogError("Failed to initialize XMSS Key."
@@ -1109,7 +1108,6 @@ int wolfCLU_sign_data_xmssmt(byte* data, char* out, int fSz, char* privKey)
 #endif
 
     /* init the xmss key */
-    XMEMSET(key, 0, sizeof(XmssKey));
     ret = wc_XmssKey_Init(key, HEAP_HINT, 0);
     if (ret != 0) {
         wolfCLU_LogError("Failed to initialize XMSS Key.\nRET: %d", ret);
