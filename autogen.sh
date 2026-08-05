@@ -26,9 +26,8 @@ fi
 
 autoreconf --install --force --verbose -I m4 -I config
 
-#where: 
+#where:
 # --force rebuilds ./configure regardless
 # --install copies some missing files to the directory including txt files
 # -I config tells tools to look in the config directory instead of root
 # -I m4 '... see -I config ...'
-

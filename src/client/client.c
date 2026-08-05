@@ -373,7 +373,7 @@ static WC_INLINE void clu_tcp_connect(SOCKET_T* sockfd, const char* ip,
         clu_build_addr(NULL, &ipv6, ip, port, udp, sctp);
         clu_tcp_socket(sockfd, udp, sctp, isIpv6);
         if (!udp) {
-            if (*sockfd < 0)
+            if (WOLFSSL_SOCKET_IS_INVALID(*sockfd))
                 err_sys_with_errno("tcp bad socket");
 
             if (connect(*sockfd, (const struct sockaddr*)&ipv6, sizeof(ipv6))
@@ -389,7 +389,7 @@ static WC_INLINE void clu_tcp_connect(SOCKET_T* sockfd, const char* ip,
         clu_tcp_socket(sockfd, udp, sctp, isIpv6);
 
         if (!udp) {
-            if (*sockfd < 0)
+            if (WOLFSSL_SOCKET_IS_INVALID(*sockfd))
                 err_sys_with_errno("tcp bad socket");
 
             if (connect(*sockfd, (const struct sockaddr*)&addr, sizeof(addr))

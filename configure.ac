@@ -18,6 +18,9 @@ AC_CONFIG_HEADERS([src/config.h])
 AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 
+# The following sets CFLAGS to empty if unset on command line.  We do not
+# want the default "-g -O2" that AC_PROG_CC sets automatically.
+: ${CFLAGS=""}
 
 AM_INIT_AUTOMAKE([1.14.1 -Wall -Werror -Wno-portability foreign tar-ustar subdir-objects no-define color-tests])
 
@@ -58,6 +61,8 @@ AM_PROG_CC_C_O
 AM_PATH_PYTHON([3.6],, [:])
 AC_SUBST([PYTHON])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ":"])
+
+OPTIMIZE_CFLAGS="-O2"
 
 # Checks for headers/libraries
 AC_CHECK_HEADERS([sys/time.h string.h termios.h unistd.h])
@@ -163,6 +168,11 @@ AX_HARDEN_CC_COMPILER_FLAGS
 if test "$GCC" = "yes"
 then
     AM_CFLAGS="$AM_CFLAGS -Wall -Wno-unused"
+
+    if test "$ax_enable_debug" = "no"
+    then
+        AM_CFLAGS="$AM_CFLAGS $OPTIMIZE_CFLAGS"
+    fi
 fi
 
 CREATE_HEX_VERSION
@@ -198,3 +208,4 @@ echo "   * C Compiler:                $CC_VERSION"
 echo "   * C Flags:                   $CFLAGS"
 echo "   * CPP Flags:                 $CPPFLAGS"
 echo "   * LIB Flags:                 $LIB"
+echo "   * Debug enabled:             $ax_enable_debug"
