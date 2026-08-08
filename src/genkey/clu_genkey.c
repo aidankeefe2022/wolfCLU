@@ -1700,7 +1700,6 @@ int wolfCLU_genKey_XMSS(WC_RNG* rng, char* fName,
 
     /* init the xmss key */
     if (ret == 0) {
-        XMEMSET(key, 0, sizeof(XmssKey));
         ret = wc_XmssKey_Init(key, HEAP_HINT, 0);
         if (ret != 0) {
             wolfCLU_LogError("Failed to initialize XMSS Key."

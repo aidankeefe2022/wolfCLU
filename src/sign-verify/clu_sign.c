@@ -212,7 +212,6 @@ int wolfCLU_sign_data_rsa(byte* data, char* out, word32 dataSz, char* privKey,
     int   outBufSz = 0;
 
     XMEMSET(&rng, 0, sizeof(rng));
-    XMEMSET(&key, 0, sizeof(key));
 
     /* initialize the RSA key */
     ret = wc_InitRsaKey(&key, NULL);
@@ -749,7 +748,6 @@ int wolfCLU_sign_data_dilithium (byte* data, char* out, word32 dataSz, char* pri
 #endif
 
     XMEMSET(&rng, 0, sizeof(rng));
-    XMEMSET(key, 0, sizeof(dilithium_key));
 
     /* init the dilithium key */
     ret = wc_dilithium_init(key);
@@ -885,8 +883,8 @@ int wolfCLU_sign_data_dilithium (byte* data, char* out, word32 dataSz, char* pri
     }
 
     wc_dilithium_free(key);
-    /* rng zeroed via XMEMSET before wc_InitRng, so even if wc_InitRng failed:
-     * wolfSSL checks rng->drbg internally before freeing. */
+    /* rng zeroed via XMEMSET before wc_InitRng, because wc_InitRsaKey can
+     * fail leaving rng un inited and not zeroed. */
     wc_FreeRng(&rng);
 #ifdef WOLFSSL_SMALL_STACK
     XFREE(key, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
