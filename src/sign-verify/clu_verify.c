@@ -361,8 +361,6 @@ int wolfCLU_verify_signature_rsa(byte* sig, char* out, int sigSz, char* keyPath,
     byte* outBuf = NULL;
     int   outBufSz = 0;
 
-    XMEMSET(&key, 0, sizeof(key));
-
     /* initialize RSA key */
     ret = wc_InitRsaKey(&key, NULL);
     if (ret != 0) {
@@ -1030,7 +1028,6 @@ int wolfCLU_verify_signature_xmss(byte* sig, int sigSz,
 #endif
 
     /* init the xmss key */
-    XMEMSET(key, 0, sizeof(XmssKey));
     ret = wc_XmssKey_Init(key, HEAP_HINT, 0);
     if (ret != 0) {
         wolfCLU_LogError("Failed to initialize XMSS Key.\nRET: %d", ret);
@@ -1198,7 +1195,6 @@ int wolfCLU_verify_signature_xmssmt(byte* sig, int sigSz,
 #endif
 
     /* init the xmss key */
-    XMEMSET(key, 0, sizeof(XmssKey));
     ret = wc_XmssKey_Init(key, HEAP_HINT, 0);
     if (ret != 0) {
         wolfCLU_LogError("Failed to initialize XMSS Key.\nRET: %d", ret);

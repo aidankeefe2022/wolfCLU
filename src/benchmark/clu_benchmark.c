@@ -60,8 +60,6 @@ int wolfCLU_benchmark(int timer, int* option)
 
     byte*           digest;         /* message digest */
 
-    XMEMSET(&rng, 0, sizeof(rng));
-
     if (wc_InitRng(&rng) != 0) {
         return WOLFCLU_FATAL_ERROR;
     }

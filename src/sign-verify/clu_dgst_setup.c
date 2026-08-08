@@ -470,7 +470,6 @@ static int wolfCLU_dgstSignVerify(WOLFSSL_BIO* dataBio, WOLFSSL_BIO* pubKeyBio,
     /* create the signature if requested */
     if (ret == WOLFCLU_SUCCESS && signing == 1) {
         WC_RNG rng;
-        XMEMSET(&rng, 0, sizeof(rng));
 
         if (wc_InitRng(&rng) != 0) {
             wolfCLU_LogError("Error initializing RNG");
