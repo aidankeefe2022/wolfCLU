@@ -921,10 +921,20 @@ int wolfCLU_genKey_RSA(WC_RNG* rng, char* fName, int directive, int fmt, int
 
             XFCLOSE(file);
             file = NULL;
-            XFREE(derBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-            derBuf = NULL;
-            XFREE(pemBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-            pemBuf = NULL;
+            if (derBuf != NULL) {
+                if (derBufSz > 0) {
+                    wc_ForceZero(derBuf, (word32)derBufSz);
+                }
+                XFREE(derBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+                derBuf = NULL;
+            }
+            if (pemBuf != NULL) {
+                if (pemBufSz > 0) {
+                    wc_ForceZero(pemBuf, (word32)pemBufSz);
+                }
+                XFREE(pemBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+                pemBuf = NULL;
+            }
 
             FALL_THROUGH;
         case PUB_ONLY_FILE:
@@ -1014,10 +1024,18 @@ int wolfCLU_genKey_RSA(WC_RNG* rng, char* fName, int directive, int fmt, int
         fOutNameBuf = NULL;
     }
     if (derBuf != NULL) {
+        if (derBufSz > 0) {
+            wc_ForceZero(derBuf, (word32)derBufSz);
+        }
         XFREE(derBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+        derBuf = NULL;
     }
     if (pemBuf != NULL) {
+        if (pemBufSz > 0) {
+            wc_ForceZero(pemBuf, (word32)pemBufSz);
+        }
         XFREE(pemBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+        pemBuf = NULL;
     }
      if (file != NULL) {
         XFCLOSE(file);
