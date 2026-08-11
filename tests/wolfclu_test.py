@@ -94,6 +94,23 @@ def is_fips():
     return "FIPS" in (r.stdout + r.stderr)
 
 
+# wolfSSL's NOT_COMPILED_IN.  wolfCLU returns it whenever an algorithm is
+# named explicitly but is absent from the linked wolfSSL build, and main()
+# reports it as "Error returned: -174.".
+NOT_COMPILED_IN = -174
+
+
+def not_compiled_in(result):
+    """True when wolfCLU rejected the command because the requested algorithm
+    is not compiled into the linked wolfSSL build.
+
+    Lets tests for optional algorithms skip rather than fail on builds that
+    omit them (e.g. wolfSSL built with NO_MD5 or without --enable-ed25519).
+    """
+    return "Error returned: {}.".format(NOT_COMPILED_IN) in (
+        result.stdout + result.stderr)
+
+
 def make_sparse(fileobj):
     """Mark an open file as sparse on Windows before it is extended.
 

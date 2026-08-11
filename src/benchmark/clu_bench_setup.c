@@ -105,6 +105,8 @@ static const struct option bench_options[] = {
 #endif
 #ifndef NO_MD5
     {"md5",      no_argument, 0, WOLFCLU_BENCH_MD5      },
+#else
+    {"md5",      no_argument, 0, WOLFCLU_MD5            },
 #endif
 #ifndef NO_SHA
     {"sha",      no_argument, 0, WOLFCLU_BENCH_SHA      },
@@ -175,6 +177,12 @@ int wolfCLU_benchSetup(int argc, char** argv)
                     optionCheck = 1;
                 }
                 break;
+
+#ifdef NO_MD5
+            case WOLFCLU_MD5:
+                wolfCLU_LogError("MD5 not compiled in");
+                return NOT_COMPILED_IN;
+#endif
 
             case ARG_FOUND_TWICE:
                 wolfCLU_LogError("Found duplicate argument");

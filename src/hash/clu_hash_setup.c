@@ -130,9 +130,8 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_MD5:
             #ifdef NO_MD5
-                wolfCLU_LogError("MD5 not avalable in your current wolfSSL "
-                        "build");
-                return WOLFCLU_FATAL_ERROR;
+                wolfCLU_LogError("MD5 not compiled in");
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");

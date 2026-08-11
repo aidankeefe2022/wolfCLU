@@ -8,7 +8,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from wolfclu_test import (CERTS_DIR, run_wolfssl, test_main, truncate_sparse)
+from wolfclu_test import (CERTS_DIR, not_compiled_in, run_wolfssl, test_main,
+                          truncate_sparse)
 
 HASH_DIR = os.path.dirname(os.path.abspath(__file__))
 CERT_FILE = os.path.join(CERTS_DIR, "ca-cert.pem")
@@ -90,6 +91,8 @@ class HashShortcutTest(unittest.TestCase):
 
     def test_md5(self):
         r = run_wolfssl("md5", CERT_FILE)
+        if not_compiled_in(r):
+            self.skipTest("MD5 not compiled into wolfSSL")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.strip(), _read_expected("md5-expect.hex"))
 

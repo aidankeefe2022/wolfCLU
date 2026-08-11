@@ -179,6 +179,9 @@ int wolfCLU_verify_signature(char* sig, char* hashFile, char* out,
             XFCLOSE(h);
             ret = wolfCLU_verify_signature_ed25519(data, (int)fSz, hash,
                     (int)hSz, keyPath, pubIn, inForm);
+        #else
+            wolfCLU_LogError("ED25519 not compiled in");
+            ret = NOT_COMPILED_IN;
         #endif
             break;
 
@@ -830,6 +833,14 @@ int wolfCLU_verify_signature_ed25519(byte* sig, int sigSz,
     /* expected ret == WOLFCLU_SUCCESS */
     return (ret >= 0) ? WOLFCLU_SUCCESS : ret;
 #else
+    (void)sig;
+    (void)sigSz;
+    (void)hash;
+    (void)hashSz;
+    (void)pubIn;
+    (void)keyPath;
+    (void)inForm;
+
     return NOT_COMPILED_IN;
 #endif  /* HAVE_ED25519 */
 }

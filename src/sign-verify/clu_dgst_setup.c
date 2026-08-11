@@ -620,7 +620,12 @@ int wolfCLU_dgst_setup(int argc, char** argv)
         switch (option) {
 
             case WOLFCLU_MD5:
+            #ifdef NO_MD5
+                wolfCLU_LogError("MD5 not compiled in");
+                ret = NOT_COMPILED_IN;
+            #else
                 hashType = WC_HASH_TYPE_MD5;
+            #endif
                 break;
 
             case WOLFCLU_CERT_SHA:
