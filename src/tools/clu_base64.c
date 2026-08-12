@@ -66,12 +66,13 @@ int wolfCLU_Base64Setup(int argc, char** argv)
 
     opterr = 0; /* do not display unrecognized options */
     optind = 0; /* start at indent 0 */
-    while ((option = wolfCLU_GetOpt(argc, argv, "",
+    while (ret == WOLFCLU_SUCCESS && (option = wolfCLU_GetOpt(argc, argv, "",
                    base64_options, &longIndex )) != END_OF_ARGS) {
         switch (option) {
             case ARG_FOUND_TWICE:
                 wolfCLU_LogError("Found duplicate argument");
-                return WOLFCLU_FATAL_ERROR;
+                ret = WOLFCLU_FATAL_ERROR;
+                break;
 
             case WOLFCLU_INFILE:
                 bioIn = wolfSSL_BIO_new_file(optarg, "rb");
@@ -86,9 +87,6 @@ int wolfCLU_Base64Setup(int argc, char** argv)
                 if (bioOut == NULL) {
                     wolfCLU_LogError("unable to open output file %s",
                             optarg);
-                    if (bioIn != NULL) {
-                        wolfSSL_BIO_free(bioIn);
-                    }
                     ret = WOLFCLU_FATAL_ERROR;
                 }
                 break;
@@ -99,6 +97,12 @@ int wolfCLU_Base64Setup(int argc, char** argv)
 
             case WOLFCLU_HELP:
                 wolfCLU_Base64Help();
+                if (bioIn != NULL) {
+                    wolfSSL_BIO_free(bioIn);
+                }
+                if (bioOut != NULL) {
+                    wolfSSL_BIO_free(bioOut);
+                }
                 return WOLFCLU_SUCCESS;
 
             case ':':
