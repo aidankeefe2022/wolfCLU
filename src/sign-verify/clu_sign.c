@@ -720,6 +720,7 @@ int wolfCLU_sign_data_ed25519 (byte* data, char* out, word32 fSz, char* privKey,
     (void)privKey;
     (void)inForm;
 
+    wolfCLU_LogError("ED25519 not compiled in");
     return NOT_COMPILED_IN;
 #endif
 }

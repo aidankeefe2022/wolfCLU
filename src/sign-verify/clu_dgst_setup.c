@@ -64,7 +64,9 @@ static void wolfCLU_dgstHelp(void)
     WOLFCLU_LOG(WOLFCLU_L0, "dgst: (Data can be passed in via stdin or via "
         "a file as the last argument)");
     WOLFCLU_LOG(WOLFCLU_L0, "Hash algos supported:");
+#ifndef NO_MD5
     WOLFCLU_LOG(WOLFCLU_L0, "\t-md5");
+#endif
     WOLFCLU_LOG(WOLFCLU_L0, "\t-sha");
     WOLFCLU_LOG(WOLFCLU_L0, "\t-sha224");
     WOLFCLU_LOG(WOLFCLU_L0, "\t-sha256");

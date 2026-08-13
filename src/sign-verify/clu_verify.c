@@ -837,8 +837,8 @@ int wolfCLU_verify_signature_ed25519(byte* sig, int sigSz,
     (void)sigSz;
     (void)hash;
     (void)hashSz;
-    (void)pubIn;
     (void)keyPath;
+    (void)pubIn;
     (void)inForm;
 
     return NOT_COMPILED_IN;

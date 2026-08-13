@@ -35,6 +35,13 @@ class HashCommandTest(unittest.TestCase):
                 if "disable-filesystem" in f.read():
                     raise unittest.SkipTest("filesystem support disabled")
 
+    def test_md5(self):
+        r = run_wolfssl("-hash", "-md5", "-in", CERT_FILE)
+        if not_compiled_in(r):
+            self.skipTest("MD5 not compiled into wolfSSL")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.strip(), _read_expected("md5-expect.hex"))
+
     def test_sha(self):
         r = run_wolfssl("-hash", "-sha", "-in", CERT_FILE)
         self.assertEqual(r.returncode, 0, r.stderr)
@@ -69,7 +76,7 @@ class HashCommandTest(unittest.TestCase):
 
     def test_blake2b(self):
         r = run_wolfssl("-hash", "-blake2b", "64", "-in", CERT_FILE)
-        if r.returncode != 0 and "BLAKE2 not avalible" in (r.stdout + r.stderr):
+        if not_compiled_in(r):
             self.skipTest("BLAKE2 not compiled into wolfSSL")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.strip(), _read_expected("blake2b-expect.hex"))
