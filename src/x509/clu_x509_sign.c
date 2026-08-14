@@ -1304,7 +1304,7 @@ int wolfCLU_CertSign(WOLFCLU_CERT_SIGN* csign, WOLFSSL_X509* x509)
             md = wolfSSL_EVP_md5();
         #else
             wolfCLU_LogError("MD5 not compiled in");
-            ret = WOLFCLU_FATAL_ERROR;
+            ret = NOT_COMPILED_IN;
         #endif
         }
         else if (csign->hashType == WC_HASH_TYPE_SHA) {

@@ -841,6 +841,7 @@ int wolfCLU_verify_signature_ed25519(byte* sig, int sigSz,
     (void)pubIn;
     (void)inForm;
 
+    wolfCLU_LogError("ED25519 not compiled in");
     return NOT_COMPILED_IN;
 #endif  /* HAVE_ED25519 */
 }

@@ -619,6 +619,10 @@ int wolfCLU_dgst_setup(int argc, char** argv)
     while ((option = wolfCLU_GetOpt(argc, argv, "",
                    dgst_options, &longIndex )) != END_OF_ARGS) {
 
+        if (ret != WOLFCLU_SUCCESS) {
+            break;
+        }
+
         switch (option) {
 
             case WOLFCLU_MD5:
