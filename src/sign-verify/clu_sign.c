@@ -714,6 +714,13 @@ int wolfCLU_sign_data_ed25519 (byte* data, char* out, word32 fSz, char* privKey,
     /* expected ret == WOLFCLU_SUCCESS */
     return (ret >= 0) ? WOLFCLU_SUCCESS : ret;
 #else
+    (void)data;
+    (void)fSz;
+    (void)out;
+    (void)privKey;
+    (void)inForm;
+
+    wolfCLU_LogError("ED25519 not compiled in");
     return NOT_COMPILED_IN;
 #endif
 }

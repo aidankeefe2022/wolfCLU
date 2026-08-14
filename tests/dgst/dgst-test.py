@@ -9,8 +9,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from wolfclu_test import (CERTS_DIR, is_fips, run_wolfssl, test_main,
-                          truncate_sparse)
+from wolfclu_test import (CERTS_DIR, is_fips, not_compiled_in, run_wolfssl,
+                          test_main, truncate_sparse)
 
 DGST_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,6 +41,8 @@ class DgstVerifyTest(unittest.TestCase):
                         os.path.join(CERTS_DIR, "server-keyPub.pem"),
                         "-signature", os.path.join(DGST_DIR, "md5-rsa.sig"),
                         os.path.join(CERTS_DIR, "server-key.der"))
+        if not_compiled_in(r):
+            self.skipTest("MD5 not compiled into wolfSSL")
         self.assertEqual(r.returncode, 0, r.stderr)
 
     def test_verify_sha256_ecc(self):
@@ -72,7 +74,9 @@ class DgstVerifyTest(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
 
     def test_fail_wrong_digest(self):
-        r = run_wolfssl("dgst", "-md5", "-verify",
+        """Verifying a sha256 signature under a different digest must fail.
+        """
+        r = run_wolfssl("dgst", "-sha384", "-verify",
                         os.path.join(CERTS_DIR, "server-keyPub.pem"),
                         "-signature", os.path.join(DGST_DIR, "sha256-rsa.sig"),
                         os.path.join(CERTS_DIR, "server-key.der"))
@@ -88,7 +92,8 @@ class DgstVerifyTest(unittest.TestCase):
         """Sign/verify round-trip for each supported hash algorithm.
 
         Covers the per-algorithm digest-selection branches in
-        clu_dgst_setup.c. -md5 is skipped under FIPS.
+        clu_dgst_setup.c. -md5 is skipped under FIPS, and any algorithm
+        the linked wolfSSL build omits is skipped.
         """
         algs = ["sha", "sha224", "sha256", "sha384", "sha512"]
         if not is_fips():
@@ -103,6 +108,9 @@ class DgstVerifyTest(unittest.TestCase):
                 r = run_wolfssl("dgst", "-" + alg, "-sign",
                                 os.path.join(CERTS_DIR, "server-key.pem"),
                                 "-out", sig_file, input_file)
+                if not_compiled_in(r):
+                    self.skipTest(
+                        "{} not compiled into wolfSSL".format(alg))
                 self.assertEqual(r.returncode, 0, r.stderr)
 
                 r = run_wolfssl("dgst", "-" + alg, "-verify",
@@ -471,6 +479,9 @@ class DgstHmacTest(unittest.TestCase):
             with self.subTest(alg=alg):
                 r = run_wolfssl("dgst", "-" + alg, "-hmac",
                                 "-mackey", self.KEY, self.data_file)
+                if not_compiled_in(r):
+                    self.skipTest(
+                        "{} not compiled into wolfSSL".format(alg))
                 self.assertEqual(r.returncode, 0, r.stderr)
                 self.assertIn(expected, r.stdout,
                               "HMAC-{} mismatch".format(alg))

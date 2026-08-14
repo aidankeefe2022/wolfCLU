@@ -1392,7 +1392,12 @@ int wolfCLU_hmacHash(WOLFSSL_HMAC_CTX *ctx, void* key, word32 len,
      * Cast to int so unrelated hash types don't trip -Wswitch-enum. */
     switch ((int)alg) {
         case WC_HASH_TYPE_MD5:
+#ifndef NO_MD5
             md = wolfSSL_EVP_md5();
+#else
+            wolfCLU_LogError("MD5 not compiled in");
+            ret = NOT_COMPILED_IN;
+#endif
             break;
         case WC_HASH_TYPE_SHA:
             md = wolfSSL_EVP_sha1();

@@ -130,9 +130,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_MD5:
             #ifdef NO_MD5
-                wolfCLU_LogError("MD5 not avalable in your current wolfSSL "
+                wolfCLU_LogError("MD5 not available in your current wolfSSL "
                         "build");
-                return WOLFCLU_FATAL_ERROR;
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");
@@ -146,9 +146,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_SHA:
             #ifdef NO_SHA
-                wolfCLU_LogError("SHA not avalible in your current wolfSSL "
+                wolfCLU_LogError("SHA not available in your current wolfSSL "
                         "build");
-                return WOLFCLU_FATAL_ERROR;
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");
@@ -162,9 +162,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_SHA256:
             #ifdef NO_SHA256
-                wolfCLU_LogError("SHA-256 not avalible in your current wolfSSL "
-                        "build");
-                return WOLFCLU_FATAL_ERROR;
+                wolfCLU_LogError("SHA-256 not available in your current wolfSSL"
+                        " build");
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");
@@ -178,9 +178,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_SHA384:
             #ifndef WOLFSSL_SHA384
-                wolfCLU_LogError("SHA-384 not avalible in your current wolfSSL "
-                        "build");
-                return WOLFCLU_FATAL_ERROR;
+                wolfCLU_LogError("SHA-384 not available in your current wolfSSL"
+                        " build");
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");
@@ -195,9 +195,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_SHA512:
             #ifndef WOLFSSL_SHA512
-                wolfCLU_LogError("SHA-512 not avalible in your current wolfSSL "
-                        "build");
-                return WOLFCLU_FATAL_ERROR;
+                wolfCLU_LogError("SHA-512 not available in your current wolfSSL"
+                        " build");
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");
@@ -212,9 +212,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_BLAKE:
             #ifndef HAVE_BLAKE2B
-                wolfCLU_LogError("BLAKE2 not avalible in your current wolfSSL "
+                wolfCLU_LogError("BLAKE2 not available in your current wolfSSL "
                         "build");
-                return WOLFCLU_FATAL_ERROR;
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");
@@ -236,9 +236,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_BASE64ENC:
             #if defined(NO_CODING) || !defined(WOLFSSL_BASE64_ENCODE)
-                wolfCLU_LogError("BASE64 encoding not avalible in your "
+                wolfCLU_LogError("BASE64 encoding not available in your "
                         "current wolfSSL build");
-                return WOLFCLU_FATAL_ERROR;
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");
@@ -252,9 +252,9 @@ int wolfCLU_hashSetup(int argc, char** argv)
 
             case WOLFCLU_BASE64DEC:
             #if defined(NO_CODING)
-                wolfCLU_LogError("BASE64 encoding not avalible in your "
+                wolfCLU_LogError("BASE64 encoding not available in your "
                         "current wolfSSL build");
-                return WOLFCLU_FATAL_ERROR;
+                return NOT_COMPILED_IN;
             #else
                 if (alg != NULL) {
                     wolfCLU_LogError("alg already set");

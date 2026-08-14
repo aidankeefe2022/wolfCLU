@@ -6,7 +6,8 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from wolfclu_test import WOLFSSL_BIN, CERTS_DIR, run_wolfssl, test_main
+from wolfclu_test import (WOLFSSL_BIN, CERTS_DIR, not_compiled_in,
+                          run_wolfssl, test_main)
 
 # Files that tests may create; cleaned up by tearDownClass
 _TEMP_FILES = []
@@ -95,6 +96,10 @@ class _GenkeySignVerifyBase(unittest.TestCase):
         pub = keybase + ".pub"
         self._track(priv, pub)
         r = run_wolfssl(*args)
+        # Builds that omit an optional key type (e.g. wolfSSL without
+        # --enable-ed25519) report NOT_COMPILED_IN; skip rather than fail.
+        if not_compiled_in(r):
+            self.skipTest(f"{algo} not compiled into wolfSSL")
         self.assertEqual(r.returncode, 0,
                          f"genkey {algo} failed: {r.stderr}")
         return priv, pub
