@@ -379,4 +379,3 @@ int wolfCLU_CASetup(int argc, char** argv)
     return WOLFCLU_FATAL_ERROR;
 #endif
 }
-
