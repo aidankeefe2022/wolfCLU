@@ -100,16 +100,25 @@ static int FileRead(WOLFSSL_BIO* bio, WOLFCLU_IO_BUFFER* buffer)
         wolfCLU_LogError("Could not get length of file");
         return WOLFCLU_FATAL_ERROR;
     }
+    else if (fileSize > INT_MAX) {
+        wolfCLU_LogError("File is too large max is %d bytes", INT_MAX);
+        return WOLFCLU_FATAL_ERROR;
+    }
     if (wolfSSL_BIO_reset(bio) != WOLFSSL_SUCCESS) {
         wolfCLU_LogError("Could not reset Bio");
         return WOLFCLU_FATAL_ERROR;
     }
-    buffer->len = (sword32)fileSize;
+    buffer->len = (int)fileSize;
     if (buffer->len < 0) {
         wolfCLU_LogError("Could not get length of file data");
         return WOLFCLU_FATAL_ERROR;
     }
-
+    if (buffer->len == 0) {
+        buffer->cap = 0;
+        buffer->len = 0;
+        buffer->outBuf = NULL;
+        return WOLFCLU_SUCCESS;
+    }
     buffer->outBuf = XMALLOC(buffer->len, HEAP_HINT,
             DYNAMIC_TYPE_TMP_BUFFER);
     if (buffer->outBuf == NULL) {
