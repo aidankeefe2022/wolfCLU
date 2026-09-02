@@ -195,6 +195,11 @@ int wolfCLU_extKeyUsagePrint(WOLFSSL_BIO* bio, unsigned int keyUsage,
 
     return WOLFCLU_SUCCESS;
 #else
+    (void)bio;
+    (void)keyUsage;
+    (void)indent;
+    (void)flag;
+
     wolfCLU_LogError("Extended key function not supported by this"
                      " version of wolfSSL");
     return NOT_COMPILED_IN;
