@@ -22,23 +22,59 @@
 #include <wolfclu/clu_header_main.h>
 #include <wolfclu/clu_log.h>
 #include <wolfclu/clu_optargs.h>
+#include <wolfclu/clu_io.h>
 #include <wolfclu/genkey/clu_genkey.h>
 
 #ifndef WOLFCLU_NO_FILESYSTEM
 
 #define MAX_LEN             1024
 
+static int turnUserStdinputToFile(char* in)
+{
+    int ret = 0;
+    word32 inputLength = 0;
+    byte* userInputBuffer = NULL;
+    WOLFCLU_IO tempIo = {0};
+    WOLFCLU_LOG(WOLFCLU_L0, "file did not exist, encrypting string "
+            "following \"-i\" instead.");
+
+
+    /* use user entered data to encrypt */
+    inputLength = (int) XSTRLEN(in);
+    userInputBuffer = (byte*) XMALLOC(inputLength, HEAP_HINT,
+                                            DYNAMIC_TYPE_TMP_BUFFER);
+    if (userInputBuffer == NULL)
+        return MEMORY_E;
+
+
+
+    /* writes the entered text to the input buffer */
+    XMEMCPY(userInputBuffer, in, inputLength);
+
+    tempIo = wolfCLU_IO_OpenFile(in, WOLFCLU_IO_WRITABLE_FILE);
+    if (tempIo.type > 0) {
+        ret = wolfCLU_IO_Write(&tempIo, userInputBuffer, inputLength);
+        wolfCLU_IO_Close(&tempIo);
+    }
+    else {
+        ret = WOLFCLU_FATAL_ERROR;
+    }
+
+    /* free buffer */
+    XFREE(userInputBuffer, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+    return ret;
+}
+
 /* return WOLFCLU_SUCCESS on success */
-int wolfCLU_encrypt(int alg, char* mode, byte* pwdKey, byte* key, int size,
-        char* in, char* out, byte* iv, int block, int ivCheck, int inputHex)
+int wolfCLU_encrypt(int alg, char* mode, byte* pwdKey, byte* key, word32 size,
+        char* in, char* out, byte* iv, int block, int ivCheck)
 {
 #ifdef HAVE_CAMELLIA
     Camellia camellia;              /* camellia declaration */
 #endif
 
-    XFILE  tempInFile = NULL;       /* if user not provide a file */
-    XFILE  inFile = NULL;           /* input file */
-    XFILE  outFile = NULL;          /* output file */
+    WOLFCLU_IO  inIo = {0};           /* input file */
+    WOLFCLU_IO  outIo = {0};           /* output file */
 
     WC_RNG     rng;                 /* random number generator declaration */
 
@@ -46,252 +82,151 @@ int wolfCLU_encrypt(int alg, char* mode, byte* pwdKey, byte* key, int size,
     byte*   output = NULL;          /* output buffer */
     byte    salt[SALT_SIZE] = {0};  /* salt variable */
 
-    int     ret             = 0;    /* return variable */
+    int     ret             = WOLFCLU_SUCCESS;    /* return variable */
     int     inputLength     = 0;    /* length of input */
     int     length          = 0;    /* total length */
     int     padCounter      = 0;    /* number of padded bytes */
-    int     i               = 0;    /* loop variable */
-    int     hexRet          = 0;    /* hex -> bin return*/
+    word32     i               = 0;    /* loop variable */
+    word32     readSz          = 0;    /* bytes read from inIo this pass */
 
-    word32  tempInputL      = 0;    /* temporary input Length */
     word32  tempMax         = MAX_LEN;  /* controls encryption amount */
 
-    char    inputString[MAX_LEN];       /* the input string */
-    char*   userInputBuffer = NULL; /* buffer when input is not a file */
-
-
-    if (access (in, F_OK) == -1) {
-        WOLFCLU_LOG(WOLFCLU_L0, "file did not exist, encrypting string following \"-i\""
-                "instead.");
-
-        /* use user entered data to encrypt */
-        inputLength = (int) XSTRLEN(in);
-        userInputBuffer = (char*) XMALLOC(inputLength, HEAP_HINT,
-                                                       DYNAMIC_TYPE_TMP_BUFFER);
-        if (userInputBuffer == NULL)
-            return MEMORY_E;
-
-        /* writes the entered text to the input buffer */
-        XMEMCPY(userInputBuffer, in, inputLength);
-
-        /* open the file to write */
-        tempInFile = XFOPEN(in, "wb");
-        if (tempInFile == NULL) {
-            wolfCLU_LogError("unable to open file %s", in);
-            XFREE(userInputBuffer, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-            return BAD_FUNC_ARG;
-        }
-        else {
-            XFWRITE(userInputBuffer, 1, inputLength, tempInFile);
-            XFCLOSE(tempInFile);
-        }
-
-        /* free buffer */
-        XFREE(userInputBuffer, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    }
-
-    /* open the inFile in read mode */
-    inFile = XFOPEN(in, "rb");
-    if (inFile == NULL) {
-        wolfCLU_LogError("unable to open file %s", in);
-        return WOLFCLU_FATAL_ERROR;
-    }
-
-    /* find length */
-    XFSEEK(inFile, 0, SEEK_END);
-    inputLength = (int)XFTELL(inFile);
-    XFSEEK(inFile, 0, SEEK_SET);
-
-    length = inputLength;
+    XMEMSET(&rng, 0, sizeof(rng));
 
     /* Start up the random number generator */
-    ret = (int) wc_InitRng(&rng);
-    if (ret != 0) {
+    if (wc_InitRng(&rng) != 0) {
         wolfCLU_LogError("Random Number Generator failed to start.");
-        XFCLOSE(inFile);
-        return ret;
+        ret = WOLFCLU_FATAL_ERROR;
     }
 
-    /* pads the length until it matches a block,
-     * and increases pad number
-     */
-    while (length % block != 0) {
-        length++;
-        padCounter++;
+    if (ret == WOLFCLU_SUCCESS && access(in, F_OK) == -1) {
+        ret = turnUserStdinputToFile(in);
+    }
+
+    if (ret == WOLFCLU_SUCCESS) {
+        /* open the inFile in read mode */
+        inIo = wolfCLU_IO_OpenFile(in, WOLFCLU_IO_READABLE_FILE);
+        if (inIo.type <= 0) {
+            ret = WOLFCLU_FATAL_ERROR;
+        }
+    }
+
+    if (ret == WOLFCLU_SUCCESS) {
+        /* find length */
+        XFSEEK(inIo.fp, 0, SEEK_END);
+        inputLength = (int)XFTELL(inIo.fp);
+        XFSEEK(inIo.fp, 0, SEEK_SET);
+
+        length = inputLength;
+
+        /* pads the length until it matches a block,
+         * and increases pad number
+         */
+        while (length % block != 0) {
+            length++;
+            padCounter++;
+        }
     }
 
     /* if the iv was not explicitly set,
      * generate an iv and use the pwdKey
      */
-    if (ivCheck == 0) {
+    if (ret == WOLFCLU_SUCCESS && ivCheck == 0) {
         /* IV not set, generate it */
-        ret = wc_RNG_GenerateBlock(&rng, iv, block);
-
-        if (ret != 0) {
-            XFCLOSE(inFile);
-            wc_FreeRng(&rng);
-            return ret;
+        if (wc_RNG_GenerateBlock(&rng, iv, block) != 0) {
+            wolfCLU_LogError("Failed to create IV.");
+            ret = WOLFCLU_FATAL_ERROR;
         }
 
         /* stretches pwdKey to fit size based on wolfCLU_getAlgo() */
-        ret = wolfCLU_genKey_PWDBASED(&rng, pwdKey, size, salt, padCounter);
-        if (ret != WOLFCLU_SUCCESS) {
-            wolfCLU_LogError("failed to set pwdKey.");
-            XFCLOSE(inFile);
-            wc_FreeRng(&rng);
-            return ret;
+        if (ret == WOLFCLU_SUCCESS) {
+            ret = wolfCLU_genKey_PWDBASED(&rng, pwdKey, size, salt, padCounter);
+            if (ret != WOLFCLU_SUCCESS) {
+                wolfCLU_LogError("failed to set pwdKey.");
+            }
         }
-        /* move the generated pwdKey to "key" for encrypting */
-        for (i = 0; i < size; i++) {
-            key[i] = pwdKey[i];
+        if (ret == WOLFCLU_SUCCESS) {
+            /* move the generated pwdKey to "key" for encrypting */
+            for (i = 0; i < size; i++) {
+                key[i] = pwdKey[i];
+            }
+        }
+    }
+
+    /* MALLOC 1kB buffers */
+    if (ret == WOLFCLU_SUCCESS) {
+        input = (byte*) XMALLOC(MAX_LEN, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+        if (input == NULL) {
+            ret = WOLFCLU_FATAL_ERROR;
+        }
+    }
+    if (ret == WOLFCLU_SUCCESS) {
+        output = (byte*) XMALLOC(MAX_LEN, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+        if (output == NULL) {
+            ret = WOLFCLU_FATAL_ERROR;
         }
     }
 
     /* open the outFile in write mode */
-    outFile = XFOPEN(out, "wb");
-    if (outFile == NULL) {
-        wolfCLU_LogError("unable to open output file %s", out);
-        XFCLOSE(inFile);
-        wc_FreeRng(&rng);
-        return WOLFCLU_FATAL_ERROR;
+    if (ret == WOLFCLU_SUCCESS) {
+        outIo = wolfCLU_IO_OpenFile(out, WOLFCLU_IO_WRITABLE_FILE);
+        if (outIo.type <= 0) {
+            wolfCLU_LogError("unable to open output file %s", out);
+            ret = WOLFCLU_FATAL_ERROR;
+        }
     }
-    XFWRITE(salt, 1, SALT_SIZE, outFile);
-    XFWRITE(iv, 1, block, outFile);
-    XFCLOSE(outFile);
 
-    /* MALLOC 1kB buffers */
-    input = (byte*) XMALLOC(MAX_LEN, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (input == NULL) {
-        XFCLOSE(inFile);
-        wc_FreeRng(&rng);
-        return MEMORY_E;
-    }
-    output = (byte*) XMALLOC(MAX_LEN, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-    if (output == NULL) {
-        XFCLOSE(inFile);
-        wolfCLU_freeBins(input, NULL, NULL, NULL, NULL);
-        wc_FreeRng(&rng);
-        return MEMORY_E;
-    }
+    if (ret == WOLFCLU_SUCCESS)
+        ret = wolfCLU_IO_Write(&outIo, salt, SALT_SIZE);
+    if (ret == WOLFCLU_SUCCESS)
+        ret = wolfCLU_IO_Write(&outIo, iv, block);
 
     /* loop, encrypt 1kB at a time till length <= 0 */
-    while (length > 0) {
-        /* Read in 1kB to input[] */
-        if (feof(inFile)) {
-            ret = 0;
+    while (ret == WOLFCLU_SUCCESS && length > 0) {
+        readSz = MAX_LEN;
+
+        ret = wolfCLU_IO_ReadBlock(&inIo, (byte*)input,
+                &readSz);
+        if (ret != WOLFCLU_SUCCESS) {
+            wolfCLU_LogError("Error while reading from stream");
+            ret = WOLFCLU_FATAL_ERROR;
+            break;
         }
-        else {
-            if (inputHex == 1)
-                ret = (int) fread(inputString, 1, MAX_LEN, inFile);
-            else
-                ret = (int) fread(input, 1, MAX_LEN, inFile);
-        }
 
-        if (ret != MAX_LEN) {
-            /* check for end of file */
-            if (feof(inFile)) {
-
-                /* hex or ascii */
-                if (inputHex == 1) {
-                    hexRet = wolfCLU_hexToBin(inputString, &input,
-                                                &tempInputL,
-                                                NULL, NULL, NULL,
-                                                NULL, NULL, NULL,
-                                                NULL, NULL, NULL);
-                     if (hexRet != WOLFCLU_SUCCESS) {
-                        wolfCLU_LogError("failed during conversion of input,"
-                            " ret = %d", hexRet);
-                        XFCLOSE(inFile);
-                        wc_FreeRng(&rng);
-                        return hexRet;
-                    }
-                }/* end hex or ascii */
-
-                /* pad to end of block */
-                for (i = ret ; i < (ret + padCounter); i++) {
-                    input[i] = padCounter;
-                }
-                /* adjust tempMax for less than 1kB encryption */
-                tempMax = ret + padCounter;
+        if (readSz != MAX_LEN) {
+            /* pad to end of block */
+            for (i = readSz; i < (readSz + padCounter); i++) {
+                input[i] = padCounter;
             }
-            else { /* otherwise we got a file read error */
-                wolfCLU_freeBins(input, output, NULL, NULL, NULL);
-                XFCLOSE(inFile);
-                wc_FreeRng(&rng);
-                return FREAD_ERROR;
-            }/* End feof check */
-        }/* End fread check */
+            /* adjust tempMax for less than 1kB encryption */
+            tempMax = readSz + padCounter;
+        }
 
 #ifdef HAVE_CAMELLIA
         if (alg == WOLFCLU_CAMELLIA128CBC || alg == WOLFCLU_CAMELLIA192CBC ||
                 alg == WOLFCLU_CAMELLIA256CBC) {
-            ret = wc_CamelliaSetKey(&camellia, key, size / 8, iv);
-            if (ret != 0) {
-                XFCLOSE(inFile);
+            if (wc_CamelliaSetKey(&camellia, key, size / 8, iv) != 0) {
                 wolfCLU_LogError("CamelliaSetKey failed.");
-                wolfCLU_freeBins(input, output, NULL, NULL, NULL);
-                wc_FreeRng(&rng);
-                return ret;
+                ret = WOLFCLU_FATAL_ERROR;
+                break;
             }
             if (XSTRNCMP(mode, "cbc", 3) == 0) {
-                wc_CamelliaCbcEncrypt(&camellia, output, input, tempMax);
+                if (wc_CamelliaCbcEncrypt(&camellia, output, input,
+                            tempMax) != 0) {
+                    wolfCLU_LogError("CamelliaCbcEncrypt failed.");
+                    ret = WOLFCLU_FATAL_ERROR;
+                    break;
+                }
             }
             else {
-                XFCLOSE(inFile);
                 wolfCLU_LogError("Incompatible mode while using Camellia.");
-                wolfCLU_freeBins(input, output, NULL, NULL, NULL);
-                wc_FreeRng(&rng);
-                return FATAL_ERROR;
+                ret = WOLFCLU_FATAL_ERROR;
+                break;
             }
         }
 #endif /* HAVE_CAMELLIA */
 
-        /* this method added for visual confirmation of nist test vectors,
-         * automated tests to come soon
-         */
-
-        /* something in the output buffer and using hex */
-        if (output != NULL && inputHex == 1) {
-            int tempi;
-
-            WOLFCLU_LOG(WOLFCLU_L0, "\nUser specified hex input this is a representation of "
-                "what\nis being written to file in hex form.\n\n[ ");
-            for (tempi = 0; tempi < block; tempi++ ) {
-                WOLFCLU_LOG(WOLFCLU_L0, "%02x", output[tempi]);
-            }
-            WOLFCLU_LOG(WOLFCLU_L0, " ]\n");
-        } /* end visual confirmation */
-
-        /* Open the outFile in append mode */
-        outFile = XFOPEN(out, "ab");
-        if (outFile == NULL) {
-            XFCLOSE(inFile);
-            wolfCLU_LogError("failed to open file.");
-            wolfCLU_freeBins(input, output, NULL, NULL, NULL);
-            wc_FreeRng(&rng);
-            return FWRITE_ERROR;
-        }
-
-        ret = (int)XFWRITE(output, 1, tempMax, outFile);
-
-        if (ferror(outFile)) {
-            XFCLOSE(outFile);
-            XFCLOSE(inFile);
-            wolfCLU_LogError("failed to write to file.");
-            wolfCLU_freeBins(input, output, NULL, NULL, NULL);
-            wc_FreeRng(&rng);
-            return FWRITE_ERROR;
-        }
-        if (ret > MAX_LEN) {
-            XFCLOSE(outFile);
-            XFCLOSE(inFile);
-            wolfCLU_LogError("Wrote too much to file.");
-            wolfCLU_freeBins(input, output, NULL, NULL, NULL);
-            wc_FreeRng(&rng);
-            return FWRITE_ERROR;
-        }
-        /* close the outFile */
-        XFCLOSE(outFile);
+        ret = wolfCLU_IO_Write(&outIo, output, tempMax);
 
         length -= tempMax;
         if (length < 0)
@@ -299,16 +234,19 @@ int wolfCLU_encrypt(int alg, char* mode, byte* pwdKey, byte* key, int size,
     }
 
     /* closes the opened files and frees the memory */
-    XFCLOSE(inFile);
-    XMEMSET(key, 0, size);
-    XMEMSET(iv, 0 , block);
+    wolfCLU_ForceZero(key, size);
+    wolfCLU_ForceZero(iv, block);
+
+    wolfCLU_IO_Close(&inIo);
+    wolfCLU_IO_Close(&outIo);
 
     /* Use the wolfssl free for rng */
     wc_FreeRng(&rng);
+    wc_ForceZero(input, MAX_LEN);
     wolfCLU_freeBins(input, output, NULL, NULL, NULL);
 
     (void)mode;
     (void)alg;
-    return WOLFCLU_SUCCESS;
+    return ret;
 }
 #endif

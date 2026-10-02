@@ -302,11 +302,10 @@ void wolfCLU_stats(double start, int blockSize, int64_t blocks);
  * @param iv if entered must be in hex otherwise generated at run time
  * @param block size of block as determined by the algorithm being used
  * @param ivCheck a flag if user inputs a specific IV
- * @param inputHex a flag to specify encrypting hex data, instead of byte data
  */
-int wolfCLU_encrypt(int alg, char* mode, byte* pwdKey, byte* key, int size,
+int wolfCLU_encrypt(int alg, char* mode, byte* pwdKey, byte* key, word32 size,
                                 char* in, char* out, byte* iv, int block,
-                                int ivCheck, int inputHex);
+                                int ivCheck);
 
 /* decryption function
  *

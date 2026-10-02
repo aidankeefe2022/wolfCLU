@@ -187,6 +187,53 @@ static int FileRead(XFILE fp, WOLFCLU_IO_BUFFER* buffer, word32 limit)
 }
 #endif
 
+/* read in data upto len of memory buffer passed in. Can be called recursivly
+ * to stream data
+ *
+ * @param io io state struct
+ * @param buf caller own buffer to read data from stream to
+ * @param len max number of bytes that can be read into buf
+ * @returns num bytes read on success and negative value on failure
+ */
+int wolfCLU_IO_ReadBlock(WOLFCLU_IO* io, byte* buf, word32* len)
+{
+    int ret = WOLFCLU_SUCCESS;
+#ifndef WOLFCLU_NO_FILESYSTEM
+
+    if (io == NULL || io->type <= 0 || len == NULL ||
+            (buf == NULL && *len > 0) || io->fp == NULL) {
+        wolfCLU_LogError("Bad arg passed to wolfCLU_IO_ReadBlock");
+        if (len != NULL) {
+            *len = 0;
+        }
+        return BAD_FUNC_ARG;
+    }
+
+    if (!(io->type & WOLFCLU_IO_READABLE)) {
+        wolfCLU_LogError("Invalid ioType passed to wolfCLU_IO_Read");
+        *len = 0;
+        return BAD_FUNC_ARG;
+    }
+
+    ret = (int)XFREAD(buf, 1, *len, io->fp);
+    if (ret < 0 || XFERROR(io->fp)) {
+        wolfCLU_LogError("Error while reading io");
+        *len = 0;
+        return WOLFCLU_FATAL_ERROR;
+    }
+    else {
+        *len = ret;
+        return WOLFCLU_SUCCESS;
+    }
+#else
+    (void)io;
+    (void)buf;
+    (void)len;
+    ret = NOT_COMPILED_IN;
+    return ret;
+#endif
+}
+
 int wolfCLU_IO_Read(WOLFCLU_IO* io, byte** buf, word32* len, word32 limit)
 {
     int ret = WOLFCLU_SUCCESS;
@@ -212,8 +259,12 @@ int wolfCLU_IO_Read(WOLFCLU_IO* io, byte** buf, word32* len, word32 limit)
     if (io->type & WOLFCLU_IO_READABLE_FILE) {
         ret = FileRead(io->fp, &buffer, limit);
     }
-    else {
+    else if (io->type & WOLFCLU_IO_READABLE_STREAM) {
         ret = StreamRead(io->fp, &buffer, limit);
+    }
+    else {
+        wolfCLU_LogError("IO type was not able to be processed");
+        ret = WOLFCLU_FATAL_ERROR;
     }
 
     if (ret != WOLFCLU_SUCCESS) {
@@ -261,6 +312,10 @@ int wolfCLU_IO_Write(WOLFCLU_IO* io, const byte* buf, word32 len)
         ret = WOLFCLU_FATAL_ERROR;
     }
 #ifdef XFFLUSH
+    /* do not flush let the XFILE buffered write do its thing */
+    if (io->type & WOLFCLU_IO_NOFLUSH)
+        return ret;
+
     /* the write may only be buffered, flush so errors like a full disk are
      * caught here */
     if (ret == WOLFCLU_SUCCESS && XFFLUSH(io->fp) != 0) {
@@ -391,6 +446,7 @@ WOLFCLU_IO wolfCLU_IO_OpenFile(const char* fileName, enum WOLFCLU_IO_TYPE type)
     else {
         wolfCLU_LogError("Bad type passed to wolfCLU_IO_OpenFile");
         io.type = WOLFCLU_IO_ERROR;
+        return io;
     }
     if (fp == XBADFILE) {
         wolfCLU_LogError("Could not open file pointer from file name: %s",
@@ -421,8 +477,8 @@ int wolfCLU_IO_Close(WOLFCLU_IO* io)
 {
 #ifndef WOLFCLU_NO_FILESYSTEM
     int ret = WOLFCLU_SUCCESS;
-    if (io == NULL || io->type <= 0)
-        return BAD_FUNC_ARG;
+    if (io == NULL || io->type <= 0 || io->fp == XBADFILE)
+        return WOLFCLU_SUCCESS;
 
     /* the stream is gone even when fclose fails */
     if (!(io->type & WOLFCLU_IO_NOCLOSE) && XFCLOSE(io->fp) != 0) {

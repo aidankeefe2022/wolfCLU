@@ -240,7 +240,6 @@ int wolfCLU_setup(int argc, char** argv, char action)
     int      outCheck   =   0;  /* if output has been provided */
     int      encCheck   =   0;  /* if user is encrypting data */
     int      decCheck   =   0;  /* if user is decrypting data */
-    int      inputHex   =   0;  /* if user is encrypting hexidecimal data */
     int      keyType    = WOLFCLU_KEYTYPE_NONE;
                                 /* tells Decrypt which key it will be using;
                                  * one of the WOLFCLU_KEYTYPE_* values from
@@ -418,11 +417,6 @@ int wolfCLU_setup(int argc, char** argv, char action)
             break;
 
         case WOLFCLU_SIGN:
-            break;
-
-        case WOLFCLU_VERIFY: /* Verify results, used with -iv and -key */
-            /* using hexidecimal format */
-            inputHex = 1;
             break;
 
         case WOLFCLU_INFORM:
@@ -704,7 +698,7 @@ int wolfCLU_setup(int argc, char** argv, char action)
             }
             if (ret == WOLFCLU_SUCCESS) {
                 ret = wolfCLU_encrypt(alg, mode, pwdKey, key, keySize, in, out,
-                    iv, block, ivCheck, inputHex);
+                    iv, block, ivCheck);
             }
         }
     }
