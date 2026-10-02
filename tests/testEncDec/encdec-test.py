@@ -119,5 +119,39 @@ class CamelliaCbcTest(EncDecRoundtripTest):
         self._roundtrip("camellia-cbc-256", "hello256")
 
 
+@unittest.skipUnless("camellia-cbc-128" in _ALGOS,
+                     "Camellia-CBC not available")
+class CamelliaEdgeSizeTest(unittest.TestCase):
+    """Non-EVP path reads in 1024-byte chunks and pads to a 16-byte block;
+    round trip sizes around both boundaries."""
+
+    SIZES = [1, 15, 16, 17, 1023, 1024, 1025, 2048]
+
+    def test_camellia_edge_sizes(self):
+        for size in self.SIZES:
+            with self.subTest(size=size):
+                in_file = f"camellia_edge_{size}.in"
+                enc_file = f"camellia_edge_{size}.enc"
+                dec_file = f"camellia_edge_{size}.dec"
+                for f in (in_file, enc_file, dec_file):
+                    self.addCleanup(lambda p=f: os.remove(p)
+                                    if os.path.exists(p) else None)
+
+                with open(in_file, "wb") as f:
+                    f.write(bytes(i % 251 for i in range(size)))
+
+                r = run_wolfssl("-encrypt", "camellia-cbc-128", "-pwd",
+                                "edgepwd", "-in", in_file, "-out", enc_file)
+                self.assertEqual(r.returncode, 0,
+                                 f"encrypt size {size} failed: {r.stderr}")
+
+                r = run_wolfssl("-decrypt", "camellia-cbc-128", "-pwd",
+                                "edgepwd", "-in", enc_file, "-out", dec_file)
+                self.assertEqual(r.returncode, 0,
+                                 f"decrypt size {size} failed: {r.stderr}")
+                self.assertTrue(filecmp.cmp(in_file, dec_file, shallow=False),
+                                f"size {size} round trip mismatch")
+
+
 if __name__ == "__main__":
     test_main()

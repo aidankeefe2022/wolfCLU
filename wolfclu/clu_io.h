@@ -46,7 +46,8 @@ enum WOLFCLU_IO_TYPE {
     WOLFCLU_IO_WRITABLE_FILE   = 1 << 3,
 
     /*behaviors*/
-    WOLFCLU_IO_NOCLOSE = 1 << 10,
+    WOLFCLU_IO_NOCLOSE     = 1 << 10,
+    WOLFCLU_IO_NOFLUSH     = 1 << 11,
 
     /* type groups */
     WOLFCLU_IO_RW_STREAM =
@@ -102,6 +103,17 @@ WOLFCLU_IO wolfCLU_IO_OpenFile(const char* fileName, enum WOLFCLU_IO_TYPE type);
 int wolfCLU_IO_Close(WOLFCLU_IO* io);
 
 /**
+ * @brief read in data upto len of memory buffer passed in.
+ * Can be called contiuously to stream data
+ *
+ * @param io io state struct with readable type
+ * @param buf caller own buffer to read data from stream to
+ * @param len max number of bytes that can be read into buf also the number of
+ * bytes written
+ */
+int wolfCLU_IO_ReadBlock(WOLFCLU_IO* io, byte* buf, word32* len);
+
+/**
  * @brief read file/stream data in to an allocated buffer. If limit is
  *        0 it will default to UINT_MAX otherwise it will be the max number of
  *        bytes read from the file/stream.
@@ -116,7 +128,8 @@ int wolfCLU_IO_Close(WOLFCLU_IO* io);
 int wolfCLU_IO_Read(WOLFCLU_IO* io, byte** buf, word32* len, word32 limit);
 
 /**
- * @brief write len bytes of buf to io and flush it
+ * @brief write len bytes of buf to io and flush it can be used to stream data
+ * to stream.
  * @param io open IO with a writable type
  * @param buf buffer to write, may be NULL when len is 0
  * @param len number of bytes to write
